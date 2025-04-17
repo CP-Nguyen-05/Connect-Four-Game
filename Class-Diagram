@@ -1,171 +1,236 @@
 classDiagram
-    %% Persistence and Model
-    class User {
-      -String displayName
-      -String username
-      -String password
-      -int score
-      -int gamesPlayed
-      -int winCount
-      -int lossCount
-      -int drawCount
-      +User(displayName: String, username: String, password: String, score: int, gamesPlayed: int, winCount: int, lossCount: int, drawCount: int)
-      +getDisplayName(): String
-      +getUsername(): String
-      +getPassword(): String
-      +getScore(): int
-      +setScore(score: int): void
-      +getGamesPlayed(): int
-      +setGamesPlayed(games: int): void
-      +getWinCount(): int
-      +setWinCount(wins: int): void
-      +getLossCount(): int
-      +setLossCount(losses: int): void
-      +getDrawCount(): int
-      +setDrawCount(draws: int): void
-    }
 
-    class UserDataStore {
-      -String FILE_PATH
-      -ObjectMapper objectMapper
-      +loadUsers(): List~User~
-      +saveUsers(users: List~User~): void
-    }
+%% =========================
+%%      Shared Classes
+%% =========================
+class User {
+  -String displayName
+  -String username
+  -String password
+  -int score
+  -int gamesPlayed
+  -int winCount
+  -int lossCount
+  -int drawCount
+  +User(displayName: String, username: String, password: String, score: int, gamesPlayed: int, winCount: int, lossCount: int, drawCount: int)
+  +getDisplayName(): String
+  +getUsername(): String
+  +getPassword(): String
+  +getScore(): int
+  +setScore(score: int): void
+  +getGamesPlayed(): int
+  +setGamesPlayed(games: int): void
+  +getWinCount(): int
+  +setWinCount(wins: int): void
+  +getLossCount(): int
+  +setLossCount(losses: int): void
+  +getDrawCount(): int
+  +setDrawCount(draws: int): void
+}
 
-    class UserService {
-      +validateCredentials(username: String, password: String): User
-      +registerUser(user: User): boolean
-      +deleteUser(username: String, password: String): boolean
-    }
+class Message {
+  -String messageId
+  -String type
+  -String content
+  -String sender
+  -String recipient
+  -long timestamp
+  +Message(messageId: String, type: String, content: String, sender: String, recipient: String, timestamp: long)
+  +getMessageId(): String
+  +getType(): String
+  +getContent(): String
+  +getSender(): String
+  +getRecipient(): String
+  +getTimestamp(): long
+}
 
-    %% Client Side (JavaFX)
-    class ConnectFourApp {
-      -Stage primaryStage
-      -Scene loginScene
-      -Scene registerScene
-      -Scene optionMenuScene
-      -Scene roomScene
-      -Scene gameScene
-      -Scene howToPlayScene
-      -Scene profileScene
-      -User currentUser
-      +start(primaryStage: Stage): void
-      +switchScene(scene: Scene): void
-      +getCurrentUser(): User
-      +setCurrentUser(user: User): void
-    }
+%% =========================
+%%     Server-Side Classes
+%% =========================
+class ServerMain {
+  +main(args: String[]): void
+}
 
-    class LoginController {
-      -TextField usernameField
-      -PasswordField passwordField
-      -Label messageLabel
-      +handleLogin(): void
-    }
+class ConnectionHandler {
+  -Socket socket
+  -BlockingQueue~ConnectionHandler~ waitingPlayers
+  -BufferedReader in
+  -PrintWriter out
+  -String username
+  +run(): void
+  +sendMessage(message: Message): void
+  +readMessage(): Message
+  +getUsername(): String
+}
 
-    class RegisterController {
-      -TextField displayNameField
-      -TextField usernameField
-      -PasswordField passwordField
-      -PasswordField confirmPasswordField
-      -Label messageLabel
-      +handleRegister(): void
-    }
+class GameSession {
+  -ConnectionHandler player1
+  -ConnectionHandler player2
+  +GameSession(player1: ConnectionHandler, player2: ConnectionHandler)
+  +run(): void
+  +relayMessage(message: Message): void
+}
 
-    class OptionMenuController {
-      +handleLANOption(): void
-      +handleComputerOption(): void
-      +handleHowToPlayOption(): void
-      +handleProfileOption(): void
-    }
+class Room {
+  -String roomId
+  -List~User~ players
+  -List~User~ spectators
+  -int maxPlayerCapacity
+  -List~Message~ chatHistory
+  +Room(roomId: String, maxPlayerCapacity: int)
+  +isOpenForPlayers(): boolean
+  +addPlayer(user: User): void
+  +addSpectator(user: User): void
+  +getRoomId(): String
+  +addMessage(message: Message): void
+}
 
-    class RoomController {
-      -TextField roomIdField
-      -Label messageLabel
-      +handleCreateRoom(): void
-      +handleQuickJoin(): void
-      +handleJoinRoomById(): void
-      +handleJoinAsSpectator(): void
-    }
+class RoomManager {
+  -List~Room~ activeRooms
+  +getAvailableRoom(): Optional~Room~
+  +createRoom(): Room
+  +findRoomById(roomId: String): Optional~Room~
+  +getOpenRooms(): List~Room~
+}
 
-    class GameController {
-      +handleMove(column: int): void
-      +updateBoard(): void
-    }
+class UserDataStore {
+  -String FILE_PATH
+  -ObjectMapper objectMapper
+  +loadUsers(): List~User~
+  +saveUsers(users: List~User~): void
+}
 
-    class HowToPlayController {
-      +showInstructions(): void
-    }
+class UserService {
+  +validateCredentials(username: String, password: String): User
+  +registerUser(user: User): boolean
+  +deleteUser(username: String, password: String): boolean
+}
 
-    class ProfileController {
-      -Label displayNameLabel
-      -Label usernameLabel
-      -Label scoreLabel
-      -Label gamesPlayedLabel
-      -Label winCountLabel
-      -Label lossCountLabel
-      -Label drawCountLabel
-      +displayProfileInfo(user: User): void
-    }
+%% =========================
+%%     Client-Side Classes
+%% =========================
+class ConnectFourApp {
+  -Stage primaryStage
+  -Scene loginScene
+  -Scene registerScene
+  -Scene optionMenuScene
+  -Scene roomScene
+  -Scene gameScene
+  -Scene howToPlayScene
+  -Scene profileScene
+  -User currentUser
+  -ClientConnection clientConnection
+  +start(primaryStage: Stage): void
+  +switchScene(scene: Scene): void
+  +getCurrentUser(): User
+  +setCurrentUser(user: User): void
+  +sendMessage(message: Message): void
+}
 
-    %% Server Side (Networking)
-    class ServerMain {
-      +main(args: String[]): void
-    }
+class LoginController {
+  -TextField usernameField
+  -PasswordField passwordField
+  -Label messageLabel
+  +handleLogin(): void
+}
 
-    class ConnectionHandler {
-      -Socket socket
-      -BlockingQueue~ConnectionHandler~ waitingPlayers
-      -BufferedReader in
-      -PrintWriter out
-      -String username
-      +run(): void
-      +sendMessage(message: String): void
-      +readMessage(): String
-      +getUsername(): String
-    }
+class RegisterController {
+  -TextField displayNameField
+  -TextField usernameField
+  -PasswordField passwordField
+  -PasswordField confirmPasswordField
+  -Label messageLabel
+  +handleRegister(): void
+}
 
-    class GameSession {
-      -ConnectionHandler player1
-      -ConnectionHandler player2
-      +GameSession(player1: ConnectionHandler, player2: ConnectionHandler)
-      +run(): void
-    }
+class OptionMenuController {
+  +handleLANOption(): void
+  +handleComputerOption(): void
+  +handleHowToPlayOption(): void
+  +handleProfileOption(): void
+}
 
-    class Room {
-      -String roomId
-      -List~User~ players
-      -List~User~ spectators
-      -int maxPlayerCapacity
-      +Room(roomId: String, maxPlayerCapacity: int)
-      +isOpenForPlayers(): boolean
-      +addPlayer(user: User): void
-      +addSpectator(user: User): void
-      +getRoomId(): String
-    }
+class RoomView {
+  -String roomId
+  -int currentPlayerCount
+  -int maxPlayerCapacity
+  -boolean isOpen
+  +RoomView(roomId: String, currentPlayerCount: int, maxPlayerCapacity: int, isOpen: boolean)
+  +getRoomId(): String
+  +getCurrentPlayerCount(): int
+  +getMaxPlayerCapacity(): int
+  +isOpen(): boolean
+}
 
-    class RoomManager {
-      -List~Room~ activeRooms
-      +getAvailableRoom(): Optional~Room~
-      +createRoom(): Room
-      +findRoomById(roomId: String): Optional~Room~
-    }
+class RoomController {
+  -TextField roomIdField
+  -Label messageLabel
+  -List~RoomView~ availableRooms
+  -ListView~RoomView~ roomListView
+  +fetchAvailableRooms(): void
+  +updateRoomList(): void
+  +handleCreateRoom(): void
+  +handleQuickJoin(): void
+  +handleJoinRoomById(): void
+  +handleJoinAsSpectator(): void
+}
 
-    %% Relationships
-    UserDataStore --> User : "persists"
-    UserService --> UserDataStore : "uses"
+class GameController {
+  +handleMove(column: int): void
+  +updateBoard(): void
+}
 
-    ConnectFourApp --> LoginController : "uses"
-    ConnectFourApp --> RegisterController : "uses"
-    ConnectFourApp --> OptionMenuController : "uses"
-    ConnectFourApp --> RoomController : "uses"
-    ConnectFourApp --> GameController : "uses"
-    ConnectFourApp --> HowToPlayController : "uses"
-    ConnectFourApp --> ProfileController : "uses"
+class ProfileController {
+  -Label displayNameLabel
+  -Label usernameLabel
+  -Label scoreLabel
+  -Label gamesPlayedLabel
+  -Label winCountLabel
+  -Label lossCountLabel
+  -Label drawCountLabel
+  +displayProfileInfo(user: User): void
+}
 
-    ServerMain --> ConnectionHandler : "creates/spawns"
-    ConnectionHandler --> ServerMain : "handled by"
-    ConnectionHandler --> GameSession : "participates in"
-    GameSession --> ConnectionHandler : "manages players"
+class ClientConnection {
+  -Socket socket
+  -BufferedReader in
+  -PrintWriter out
+  +ClientConnection(host: String, port: int)
+  +sendMessage(message: Message): void
+  +receiveMessage(): Message
+  +startListening(): void
+}
 
-    RoomController --> RoomManager : "controls"
-    RoomManager --> Room : "creates/manages"
+%% =========================
+%%     Relationships
+%% =========================
+
+%% Server-Side Relationships
+ServerMain --> ConnectionHandler : "spawns"
+ConnectionHandler --> GameSession : "paired with"
+ConnectionHandler --> Message : "sends/receives"
+GameSession --> ConnectionHandler : "manages"
+GameSession --> Message : "relays"
+RoomManager --> Room : "creates/manages"
+Room --> User : "has"
+Room --> Message : "logs chat"
+ConnectionHandler --> RoomManager : "uses"
+ConnectionHandler --> UserService : "validates login"
+
+UserService --> UserDataStore : "uses"
+UserDataStore --> User : "persists"
+
+%% Client-Side Relationships
+ConnectFourApp --> LoginController : "uses"
+ConnectFourApp --> RegisterController : "uses"
+ConnectFourApp --> OptionMenuController : "uses"
+ConnectFourApp --> RoomController : "uses"
+ConnectFourApp --> GameController : "uses"
+ConnectFourApp --> ProfileController : "uses"
+ConnectFourApp --> ClientConnection : "uses"
+
+LoginController --> ConnectFourApp : "calls"
+RegisterController --> ConnectFourApp : "calls"
+RoomController --> ConnectFourApp : "calls"
+RoomController --> RoomView : "populates"
+ClientConnection --> Message : "sends/receives"

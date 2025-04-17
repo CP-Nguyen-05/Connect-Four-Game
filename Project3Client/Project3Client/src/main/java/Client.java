@@ -21,7 +21,6 @@ public class Client extends Thread{
 		
 		try {
 			socketClient= new Socket("127.0.0.1",5555);
-			//socketClient= new Socket("127.0.0.1",5550);
 	    	out = new ObjectOutputStream(socketClient.getOutputStream());
 	    	in = new ObjectInputStream(socketClient.getInputStream());
 	   	 	socketClient.setTcpNoDelay(true);

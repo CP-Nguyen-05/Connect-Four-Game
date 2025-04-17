@@ -36,7 +36,6 @@ public class GuiClient extends Application{
 				clientThread.send(new Message(uname, x));
 			}
 		}
-
 		launch(args);  // JavaFX GUI (currently placeholder)
 	}
 
@@ -48,8 +47,5 @@ public class GuiClient extends Application{
 		primaryStage.show();
 		
 	}
-	
-
-
 
 }
