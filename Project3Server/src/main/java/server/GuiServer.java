@@ -1,3 +1,9 @@
+package server;
+import shared.Message;
+import shared.MessageType;
+import shared.User;
+import shared.Room;
+import shared.RoomManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;

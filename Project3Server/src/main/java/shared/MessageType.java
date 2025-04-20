@@ -1,3 +1,4 @@
+package shared;
 public enum MessageType {
     LOGIN,       // client → server: authenticate
     REGISTER,    // client → server: create account

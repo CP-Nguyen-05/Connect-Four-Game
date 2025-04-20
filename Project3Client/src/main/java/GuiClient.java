@@ -1,3 +1,7 @@
+import shared.User;
+import shared.Message;
+import shared.MessageType;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -6,10 +10,13 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.util.UUID;
 
 public class GuiClient extends Application {
-	private Client client;
+	private ClientConnection conn;
+	private Thread readerThread;
+
 	private TextArea chatArea;
 	private TextField inputField;
 	private TextField usernameField;
@@ -18,11 +25,12 @@ public class GuiClient extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		// Top: username + connect
+		// Top bar: username + connect
 		usernameField = new TextField();
 		usernameField.setPromptText("Username");
 		connectButton = new Button("Connect");
 		connectButton.setOnAction(e -> onConnect());
+
 		HBox topBar = new HBox(10, usernameField, connectButton);
 		topBar.setPadding(new Insets(10));
 
@@ -32,11 +40,10 @@ public class GuiClient extends Application {
 		chatArea.setWrapText(true);
 		VBox.setVgrow(chatArea, Priority.ALWAYS);
 
-		// Bottom: input + send
+		// Bottom bar: input + send
 		inputField = new TextField();
 		inputField.setPromptText("Type a message...");
 		inputField.setDisable(true);
-		inputField.setOnAction(e -> onSend());
 
 		sendButton = new Button("Send");
 		sendButton.setDisable(true);
@@ -46,7 +53,6 @@ public class GuiClient extends Application {
 		bottomBar.setPadding(new Insets(10));
 		HBox.setHgrow(inputField, Priority.ALWAYS);
 
-		// Layout
 		VBox root = new VBox(10, topBar, chatArea, bottomBar);
 		Scene scene = new Scene(root, 600, 400);
 
@@ -62,10 +68,27 @@ public class GuiClient extends Application {
 			return;
 		}
 
-		client = new Client();
-		client.username = uname;
-		client.start();
+		// 1) Perform the connect + login synchronously
+		try {
+			conn = new ClientConnection();
+			conn.connect("localhost", 12345);
 
+			// Send LOGIN message
+			Message login = new Message(
+					UUID.randomUUID().toString(),
+					MessageType.LOGIN,
+					"",
+					uname,
+					null,
+					System.currentTimeMillis()
+			);
+			conn.sendMessage(login);
+		} catch (IOException ex) {
+			showAlert("Unable to connect to server:\n" + ex.getMessage());
+			return;
+		}
+
+		// 2) Enable UI only after connect succeeded
 		usernameField.setDisable(true);
 		connectButton.setDisable(true);
 		inputField.setDisable(false);
@@ -73,30 +96,26 @@ public class GuiClient extends Application {
 
 		appendToChat(">> Connected as " + uname + "\n");
 
-		// Thread to handle incoming messages
-		Thread reader = new Thread(() -> {
+		// 3) Start reader thread for incoming messages
+		readerThread = new Thread(() -> {
 			try {
 				while (true) {
-					Message msg = client.readMessage();
-					Platform.runLater(() ->
-							appendToChat(msg.toString() + "\n")
-					);
+					Message msg = conn.receiveMessage();
+					Platform.runLater(() -> appendToChat(msg.toString() + "\n"));
 				}
-			} catch (Exception ex) {
-				Platform.runLater(() ->
-						appendToChat(">> Disconnected from server\n")
-				);
+			} catch (Exception e) {
+				Platform.runLater(() -> appendToChat(">> Disconnected from server\n"));
 			}
 		});
-		reader.setDaemon(true);
-		reader.start();
+		readerThread.setDaemon(true);
+		readerThread.start();
 	}
 
 	private void onSend() {
 		String text = inputField.getText().trim();
-		if (text.isEmpty() || client == null) return;
+		if (text.isEmpty() || conn == null) return;
 
-		String uname = client.username;
+		String uname = usernameField.getText().trim();
 		Message msg;
 
 		if (text.startsWith("@")) {
@@ -126,7 +145,11 @@ public class GuiClient extends Application {
 			);
 		}
 
-		client.send(msg);
+		try {
+			conn.sendMessage(msg);
+		} catch (IOException ex) {
+			appendToChat(">> Failed to send message: " + ex.getMessage() + "\n");
+		}
 		inputField.clear();
 	}
 
@@ -136,7 +159,7 @@ public class GuiClient extends Application {
 	}
 
 	private void showAlert(String message) {
-		Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.OK);
+		Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
 		alert.initOwner(usernameField.getScene().getWindow());
 		alert.showAndWait();
 	}

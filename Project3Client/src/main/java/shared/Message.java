@@ -1,4 +1,4 @@
-// Message.java
+package shared;
 import java.io.Serializable;
 
 public class Message implements Serializable {
@@ -34,6 +34,9 @@ public class Message implements Serializable {
 
     @Override
     public String toString() {
+        if ("SERVER".equals(sender)) {
+            return content;
+        }
         if (recipient != null && !recipient.isEmpty()) {
             return "[PRIVATE] " + sender + " → " + recipient + ": " + content;
         }

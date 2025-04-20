@@ -1,55 +1,77 @@
+import shared.User;
+import shared.Message;
+import shared.MessageType;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.util.UUID;
 
-public class Client {
-	private static final String HOST = "localhost";
-	private static final int    PORT = 12345;
-
-	private Socket socket;
-	private ObjectOutputStream out;
-	private ObjectInputStream  in;
+/**
+ * High‑level client logic: holds username, does LOGIN handshake,
+ * and reads/sends Message objects on a background thread.
+ */
+public class Client extends Thread {
 	public String username;
+	private final String host;
+	private final int    port;
+	private ClientConnection conn;
 
-	/** Call this to start the network thread */
-	public void start() {
+	public Client() {
+		this("localhost", 12345);
+	}
+	public Client(String host, int port) {
+		this.host = host;
+		this.port = port;
+	}
+
+	@Override
+	public void run() {
 		try {
-			socket = new Socket(HOST, PORT);
+			// 1) Establish low‑level connection
+			conn = new ClientConnection();
+			conn.connect(host, port);
 
-			// IMPORTANT: create ObjectOutputStream before ObjectInputStream
-			out = new ObjectOutputStream(socket.getOutputStream());
-			in  = new ObjectInputStream(socket.getInputStream());
-
-			// send LOGIN message
+			// 2) Send LOGIN
 			Message login = new Message(
 					UUID.randomUUID().toString(),
 					MessageType.LOGIN,
-					"",             // no content needed for login
+					"SERVER",            // no payload
 					username,
 					null,
 					System.currentTimeMillis()
 			);
-			out.writeObject(login);
-			out.flush();
-		} catch (IOException e) {
+			conn.sendMessage(login);
+
+			// 3) Enter read loop
+			while (true) {
+				Message msg = conn.receiveMessage();
+				// Here you might dispatch to a UI listener, e.g.:
+				System.out.println(msg.toString());
+			}
+		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				if (conn != null) conn.close();
+			} catch (IOException ignored) {}
 		}
 	}
 
-	/** Send any Message to the server */
+	/**
+	 * Convenience method for sending any Message.
+	 */
 	public void send(Message msg) {
 		try {
-			out.writeObject(msg);
-			out.flush();
+			if (conn != null) {
+				conn.sendMessage(msg);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	/** Blocking read; returns next Message from server */
+	/**
+	 * Blocking read; returns the next incoming Message.
+	 */
 	public Message readMessage() throws IOException, ClassNotFoundException {
-		return (Message) in.readObject();
+		return conn.receiveMessage();
 	}
 }
