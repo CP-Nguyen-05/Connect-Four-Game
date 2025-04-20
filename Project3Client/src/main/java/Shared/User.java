@@ -1,5 +1,3 @@
-package ;
-
 public class User {
     private String displayName;
     private String username;
