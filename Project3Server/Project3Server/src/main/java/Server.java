@@ -1,147 +1,164 @@
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.function.Consumer;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
 
+public class Server {
+	private static final int PORT = 12345;
+	private static final Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
 
-import javafx.application.Platform;
-import javafx.scene.control.ListView;
-
-
-public class Server{
-
-	int count = 1;	
-	ArrayList<ClientThread> clients = new ArrayList<ClientThread>();
-	TheServer server;
-	
-	
-	Server(){
-
-		server = new TheServer();
-		server.start();
-	}
-	
-	
-	public class TheServer extends Thread{
-		
-		public void run() {
-		
-			try(ServerSocket mysocket = new ServerSocket(5555);){
-		    System.out.println("Server is waiting for a client!");
-		  
-			
-		    while(true) {
-		
-				ClientThread c = new ClientThread(mysocket.accept(), count);
-				clients.add(c);
-				c.start();
-				
-				count++;
-				
-			    }
-			} catch(Exception e) {
-					System.err.println("Server did not launch");
-				}
+	public static void main(String[] args) throws IOException {
+		System.out.println("Server starting on port " + PORT + "...");
+		try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+			while (true) {
+				Socket sock = serverSocket.accept();
+				ClientHandler handler = new ClientHandler(sock);
+				clients.add(handler);
+				new Thread(handler).start();
 			}
 		}
-	
+	}
 
-		class ClientThread extends Thread{
-			
-		
-			Socket connection;
-			int count;
-			ObjectInputStream in;
-			ObjectOutputStream out;
-			String username;
+	private static void broadcast(Message msg) {
+		for (ClientHandler ch : clients) {
+			ch.send(msg);
+		}
+	}
 
-			
-			ClientThread(Socket s, int count){
-				this.connection = s;
-				this.count = count;	
+	private static class ClientHandler implements Runnable {
+		private Socket socket;
+		private ObjectInputStream in;
+		private ObjectOutputStream out;
+		private String username;
+
+		public ClientHandler(Socket socket) {
+			this.socket = socket;
+		}
+
+		public void send(Message msg) {
+			try {
+				out.writeObject(msg);
+				out.flush();
+			} catch (IOException e) {
+				// ignore or log
 			}
+		}
 
-			public void updateClients(Message message) {
-				System.out.println(message);  // Optional: still log on server
+		@Override
+		public void run() {
+			try {
+				// Streams: output first
+				out = new ObjectOutputStream(socket.getOutputStream());
+				in  = new ObjectInputStream(socket.getInputStream());
 
-				if (message.recipientUser == null || message.recipientUser.isEmpty()) {
-					// Broadcast message to all clients except sender
-					for (ClientThread client : clients) {
-						if (client != this) {
-							client.send(message);
-						}
-					}
-				} else {
-					// Private message
-					boolean found = false;
-
-					for (ClientThread client : clients) {
-						if (client.username != null && client.username.equals(message.recipientUser)) {
-							client.send(message);
-							found = true;
-							break;
-						}
-					}
-
-					if (!found) {
-						// Inform the sender the user doesn't exist
-						this.send(new Message("Server", message.sender, "User '" + message.recipientUser + "' does not exist or is not connected."));
-					}
-				}
-			}
-
-			public void send(Message message){
-                try {
-                    out.writeObject(message);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-			public void run() {
-				try {
-					in = new ObjectInputStream(connection.getInputStream());
-					out = new ObjectOutputStream(connection.getOutputStream());
-					connection.setTcpNoDelay(true);
-
-					username = (String) in.readObject();
-					System.out.println("Client #" + count + " set username to: " + username);
-
-					updateClients(new Message("Server", username + " has joined the chat."));
-
-				} catch (Exception e) {
-					System.err.println("Failed to set up streams or receive username.");
+				// --- LOGIN HANDSHAKE ---
+				Message login = (Message) in.readObject();
+				if (login.getType() != MessageType.LOGIN) {
+					socket.close();
 					return;
 				}
 
-				while (true) {
-					try {
-						Message data = (Message) in.readObject();
-						updateClients(data);
-					} catch (Exception e) {
-						// ⛔ Handle disconnect or error gracefully
-						System.out.println("Client '" + username + "' disconnected.");
-						updateClients(new Message("Server", username + " has left the chat."));
-						clients.remove(this);
-						try {
-							connection.close();
-						} catch (IOException ioException) {
-							ioException.printStackTrace();
-						}
+				String requested = login.getSender();
+				// Check for duplicate among already‐connected users
+				boolean exists = false;
+				for (ClientHandler ch : clients) {
+					if (ch != this && requested.equals(ch.username)) {
+						exists = true;
 						break;
 					}
 				}
-			}//end of run
-			
-			
-		}//end of client thread
+
+				if (exists) {
+					// Inform the client that the username is taken
+					send(new Message(
+							UUID.randomUUID().toString(),
+							MessageType.ERROR,
+							"Username \"" + requested + "\" is already in use.",
+							"SERVER",
+							requested,
+							System.currentTimeMillis()
+					));
+					socket.close();
+					return;
+				}
+
+				// Accept the login
+				username = requested;
+				System.out.println(username + " connected.");
+				broadcast(new Message(
+						UUID.randomUUID().toString(),
+						MessageType.CHAT,
+						username + " joined the game lobby.",
+						"SERVER",
+						null,
+						System.currentTimeMillis()
+				));
+
+				// --- MAIN LOOP ---
+				while (true) {
+					Message msg = (Message) in.readObject();
+					switch (msg.getType()) {
+						case CHAT:
+							String target = msg.getRecipient();
+							if (target != null && !target.isEmpty()) {
+								// Private chat
+								boolean found = false;
+								for (ClientHandler ch : clients) {
+									if (ch.username.equals(target)) {
+										ch.send(msg);
+										found = true;
+										break;
+									}
+								}
+								if (found) {
+									// Echo to sender
+									this.send(msg);
+								} else {
+									// Recipient not found
+									this.send(new Message(
+											UUID.randomUUID().toString(),
+											MessageType.ERROR,
+											"User \"" + target + "\" does not exist.",
+											"SERVER",
+											username,
+											System.currentTimeMillis()
+									));
+								}
+							} else {
+								// Public chat
+								broadcast(msg);
+							}
+							break;
+
+						case MOVE:
+							// Game‐move routing (example: broadcast to all)
+							broadcast(msg);
+							break;
+
+						// handle other types...
+						default:
+							break;
+					}
+				}
+			} catch (EOFException eof) {
+				// client closed connection
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				clients.remove(this);
+				if (username != null) {
+					System.out.println(username + " disconnected.");
+					broadcast(new Message(
+							UUID.randomUUID().toString(),
+							MessageType.CHAT,
+							username + " left the game lobby.",
+							"SERVER",
+							null,
+							System.currentTimeMillis()
+					));
+				}
+				try { socket.close(); } catch (IOException ignored) {}
+			}
+		}
+	}
 }
-
-
-	
-	
-
-	

@@ -1,39 +1,49 @@
-
-import java.util.HashMap;
-
 import javafx.application.Application;
-
+import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 
-public class GuiServer extends Application{
+import java.io.OutputStream;
+import java.io.PrintStream;
 
-
-	
-	
-	public static void main(String[] args) {
-		Server serv = new Server();
-		launch(args);
-
-	}
+public class GuiServer extends Application {
+	private TextArea logArea;
 
 	@Override
-	public void start(Stage primaryStage) throws Exception {
+	public void start(Stage primaryStage) {
+		logArea = new TextArea();
+		logArea.setEditable(false);
 
-		primaryStage.setScene(new Scene(new TextField("I am not yet implemented")));
-		primaryStage.setTitle("Server");
+		VBox root = new VBox(10, logArea);
+		primaryStage.setTitle("Connect Four - Server");
+		primaryStage.setScene(new Scene(root, 600, 400));
 		primaryStage.show();
-		
+
+		// Redirect System.out and System.err into the TextArea
+		PrintStream ps = new PrintStream(new OutputStream() {
+			@Override
+			public void write(int b) {
+				Platform.runLater(() -> logArea.appendText(String.valueOf((char)b)));
+			}
+		}, true);
+		System.setOut(ps);
+		System.setErr(ps);
+
+		// Kick off the server in a daemon thread
+		Thread serverThread = new Thread(() -> {
+			try {
+				Server.main(new String[0]);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		});
+		serverThread.setDaemon(true);
+		serverThread.start();
 	}
 
-
-
+	public static void main(String[] args) {
+		launch(args);
+	}
 }
