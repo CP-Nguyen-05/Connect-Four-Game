@@ -17,6 +17,8 @@ public class Server {
 	private static final int PORT = 12345;
 	private final Set<ConnectionHandler> clients = ConcurrentHashMap.newKeySet();
 
+	private final RoomManager roomManager = new RoomManager();
+
 	public static void main(String[] args) throws IOException {
 		new Server().start();
 	}
@@ -31,6 +33,10 @@ public class Server {
 				new Thread(handler).start();
 			}
 		}
+	}
+
+	public RoomManager getRoomManager() {
+		return roomManager;
 	}
 
 	/** Broadcast to everyone _except_ the origin handler. */
