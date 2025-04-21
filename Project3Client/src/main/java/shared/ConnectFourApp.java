@@ -2,6 +2,7 @@ import shared.User;
 
 import shared.MessageType;
 import shared.Message;
+import Controller.RoomView;
 
 import java.util.UUID;
 import javafx.application.Application;
@@ -27,6 +28,9 @@ public class ConnectFourApp extends Application {
     private User currentUser;
     private Client client;  // or ClientConnection + Client wrapper
     private ClientConnection conn;
+
+    private Scene roomScene;
+    private RoomController roomCtrl;
 
     @Override
     public void start(Stage stage) {
@@ -173,34 +177,67 @@ public class ConnectFourApp extends Application {
     }
 
     private void showRoomScene() {
-        Label roomMsg = new Label("Join or Create a Room");
-        TextField roomIdFld = new TextField();
-        roomIdFld.setPromptText("Room ID");
-        Button createBtn = new Button("Create Room");
-        Button quickBtn  = new Button("Quick Join");
-        Button joinBtn   = new Button("Join By ID");
+        // Build UI once
+        if (roomScene == null) {
+            // 1) Create controls
+            ListView<RoomView> listView = new ListView<>(availableRooms);
+            TextField roomIdField       = new TextField();
+            roomIdField.setPromptText("Enter room ID");
+            Label messageLabel          = new Label();
 
-        createBtn.setOnAction(e -> {
-            // client.send(CREATE_ROOM)
-            // wait for GAME_START
-        });
-        quickBtn.setOnAction(e -> {
-            // client.send(QUICK_JOIN)
-        });
-        joinBtn.setOnAction(e -> {
-            String id = roomIdFld.getText().trim();
-            // client.send(JOIN_ROOM, content=id)
-        });
+            Button refreshBtn    = new Button("Refresh");
+            Button quickJoinBtn  = new Button("Quick Join");
+            Button joinByIdBtn   = new Button("Join By ID");
+            Button createBtn     = new Button("Create Room");
+            Button spectateBtn   = new Button("Spectate");
+            Button backBtn       = new Button("Back");
 
-        VBox root = new VBox(10,
-                roomMsg,
-                new HBox(10, roomIdFld, joinBtn),
-                quickBtn,
-                createBtn
-        );
-        root.setPadding(new Insets(20));
-        primaryStage.setScene(new Scene(root, 400, 250));
+            // 2) Instantiate the RoomController
+            roomCtrl = new RoomController(
+                    conn,
+                    currentUser,
+                    this,
+                    availableRooms,
+                    listView,
+                    roomIdField,
+                    messageLabel
+            );
+
+            // 3) Wire buttons
+            refreshBtn   .setOnAction(e -> roomCtrl.fetchAvailableRooms());
+            quickJoinBtn .setOnAction(e -> roomCtrl.handleQuickJoin());
+            joinByIdBtn  .setOnAction(e -> roomCtrl.handleJoinRoomById());
+            createBtn    .setOnAction(e -> roomCtrl.handleCreateRoom());
+            spectateBtn  .setOnAction(e -> roomCtrl.handleJoinAsSpectator());
+            backBtn      .setOnAction(e -> showOptionMenuScene());
+
+            // 4) Layout
+            HBox idRow   = new HBox(8, roomIdField, joinByIdBtn, spectateBtn);
+            idRow.setAlignment(Pos.CENTER);
+            HBox buttons = new HBox(10, refreshBtn, quickJoinBtn, createBtn, backBtn);
+            buttons.setAlignment(Pos.CENTER);
+
+            VBox root = new VBox(15,
+                    new Label("Available Rooms"),
+                    listView,
+                    idRow,
+                    messageLabel,
+                    buttons
+            );
+            root.setPadding(new Insets(20));
+            root.setAlignment(Pos.CENTER);
+
+            roomScene = new Scene(root, 500, 400);
+        }
+
+        // Show the scene and load data
+        primaryStage.setScene(roomScene);
+        roomCtrl.fetchAvailableRooms();
     }
+
+
+
+
 
     private void showGameScene() {
         // build your 7×6 GridPane of Circles here,

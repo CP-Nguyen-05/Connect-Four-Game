@@ -226,6 +226,15 @@ public class ConnectionHandler implements Runnable {
                         }
                         return;
                         //break;
+                    //TO DO
+                    case LIST_ROOMS:
+                        //List<Room> rooms = server.getRoomManager().getOpenRooms();
+                        break;
+                    case JOIN_ROOM:
+                        break;
+                    case CREATE_ROOM:
+                        break;
+
                     default:
                         sendMessage(new Message(
                                 UUID.randomUUID().toString(),

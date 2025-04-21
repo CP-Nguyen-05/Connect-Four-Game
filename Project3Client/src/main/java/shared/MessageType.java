@@ -8,6 +8,8 @@ public enum MessageType {
     CREATE_ROOM, // client → server: create a new game room
     JOIN_ROOM,   // client → server: join a specific room
     QUICK_JOIN,  // client → server: join any open room
+    LIST_ROOMS,      // client → server: “send me all open rooms”
+    ROOM_LIST,        // server → client: here’s your serialized list of RoomView
     SPECTATE,    // client → server: watch a full room
     MOVE,        // client → server: drop a disc in a column
     CHAT,        // client ⇄ server: chat text
