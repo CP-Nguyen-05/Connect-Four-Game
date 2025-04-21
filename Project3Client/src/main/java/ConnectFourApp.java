@@ -276,32 +276,7 @@ public class ConnectFourApp extends Application {
                         }
                     });
                 } catch (SocketTimeoutException ex) {
-                    System.err.println("Timeout waiting for server response: " + ex.getMessage());
-                    Platform.runLater(() -> {
-                        new Alert(AlertType.ERROR, "Server response timed out.").showAndWait();
-                        try {
-                            conn.close();
-                        } catch (Exception ex2) {
-                            ex2.printStackTrace();
-                        }
-                        conn = null;
-                        currentUser = null;
-                        showLoginScene();
-                    });
                 } catch (Exception ex) {
-                    System.err.println("Error during DELETE_ACCOUNT: " + ex.getMessage());
-                    ex.printStackTrace();
-                    Platform.runLater(() -> {
-                        new Alert(AlertType.ERROR, "Network error: " + ex.getMessage()).showAndWait();
-                        try {
-                            conn.close();
-                        } catch (Exception ex2) {
-                            ex2.printStackTrace();
-                        }
-                        conn = null;
-                        currentUser = null;
-                        showLoginScene();
-                    });
                 }
             }, "DeleteAccount-Thread").start();
         });
