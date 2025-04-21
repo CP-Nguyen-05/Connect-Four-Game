@@ -76,13 +76,11 @@ class Room {
   -List~User~ players
   -List~User~ spectators
   -int maxPlayerCapacity
-  -List~Message~ chatHistory
   +Room(roomId: String, maxPlayerCapacity: int)
   +isOpenForPlayers(): boolean
   +addPlayer(user: User): void
   +addSpectator(user: User): void
   +getRoomId(): String
-  +addMessage(message: Message): void
 }
 
 class RoomManager {
@@ -207,15 +205,14 @@ class ClientConnection {
 
 %% Server-Side Relationships
 ServerMain --> ConnectionHandler : "spawns"
-ConnectionHandler --> GameSession : "paired with"
+ConnectionHandler --> GameSession : "pairs"
 ConnectionHandler --> Message : "sends/receives"
 GameSession --> ConnectionHandler : "manages"
 GameSession --> Message : "relays"
 RoomManager --> Room : "creates/manages"
 Room --> User : "has"
-Room --> Message : "logs chat"
 ConnectionHandler --> RoomManager : "uses"
-ConnectionHandler --> UserService : "validates login"
+ConnectionHandler --> UserService : "authenticates login"
 
 UserService --> UserDataStore : "uses"
 UserDataStore --> User : "persists"
@@ -233,4 +230,5 @@ LoginController --> ConnectFourApp : "calls"
 RegisterController --> ConnectFourApp : "calls"
 RoomController --> ConnectFourApp : "calls"
 RoomController --> RoomView : "populates"
+GameController --> ConnectFourApp : "calls"
 ClientConnection --> Message : "sends/receives"
