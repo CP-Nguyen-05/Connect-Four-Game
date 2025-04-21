@@ -7,7 +7,6 @@ import shared.ClientConnection;
 import shared.ConnectFourApp;
 import Controller.RoomView;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import java.util.*;
 import java.util.stream.*;
@@ -22,45 +21,26 @@ public class RoomController {
     private final User currentUser;
     private final ConnectFourApp app;
 
-    private final ObservableList<RoomView> availableRooms;
-    private final ListView<RoomView> roomListView;
+    private final List<RoomView> rooms;       // plain List
+    private final TextArea roomListArea;      // where we show them
     private final TextField roomIdField;
     private final Label messageLabel;
 
     public RoomController(ClientConnection conn,
                           User currentUser,
                           ConnectFourApp app,
-                          ObservableList<RoomView> availableRooms,
-                          ListView<RoomView> roomListView,
+                          List<RoomView> rooms,
+                          TextArea roomListArea,
                           TextField roomIdField,
                           Label messageLabel) {
-        this.conn            = conn;
-        this.currentUser     = currentUser;
-        this.app             = app;
-        this.availableRooms  = availableRooms;
-        this.roomListView    = roomListView;
-        this.roomIdField     = roomIdField;
-        this.messageLabel    = messageLabel;
-
-        // bind model to view
-        this.roomListView.setItems(this.availableRooms);
-        this.roomListView.setCellFactory(lv -> new ListCell<RoomView>() {
-            @Override
-            protected void updateItem(RoomView rv, boolean empty) {
-                super.updateItem(rv, empty);
-                if (empty || rv == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("%s  (%d/%d)%s",
-                            rv.getRoomId(),
-                            rv.getCurrentPlayerCount(),
-                            rv.getMaxPlayerCapacity(),
-                            rv.isOpen() ? "" : " [FULL]"));
-                }
-            }
-        });
+        this.conn           = conn;
+        this.currentUser    = currentUser;
+        this.app            = app;
+        this.rooms          = rooms;
+        this.roomListArea   = roomListArea;
+        this.roomIdField    = roomIdField;
+        this.messageLabel   = messageLabel;
     }
-
     /** Fetches open rooms from the server and updates the list. */
     public void fetchAvailableRooms() {
         messageLabel.setText("Loading rooms...");
@@ -80,18 +60,46 @@ public class RoomController {
                     reply = conn.receiveMessage();
                 } while (reply.getType() != MessageType.ROOM_LIST);
 
-                List<RoomView> rooms = parseRoomList(reply.getContent());
+                // parse into your plain List<RoomView>
+                List<RoomView> parsed = Arrays.stream(reply.getContent().split(";", -1))
+                        .filter(s -> !s.isBlank())
+                        .map(chunk -> {
+                            String[] p = chunk.split("\\|", -1);
+                            return new RoomView(
+                                    p[0],
+                                    Integer.parseInt(p[1]),
+                                    Integer.parseInt(p[2]),
+                                    Boolean.parseBoolean(p[3])
+                            );
+                        })
+                        .collect(Collectors.toList());
+
+                // update UI on FX thread
                 Platform.runLater(() -> {
-                    availableRooms.setAll(rooms);
+                    rooms.clear();
+                    rooms.addAll(parsed);
+
+                    // rebuild the text area
+                    StringBuilder sb = new StringBuilder();
+                    for (RoomView rv : rooms) {
+                        sb.append(String.format("%s  (%d/%d)%s\n",
+                                rv.getRoomId(),
+                                rv.getCurrentPlayerCount(),
+                                rv.getMaxPlayerCapacity(),
+                                rv.isOpen() ? "" : " [FULL]")
+                        );
+                    }
+                    roomListArea.setText(sb.toString());
                     messageLabel.setText("");
                 });
+
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Platform.runLater(() ->
                         messageLabel.setText("Error: " + ex.getMessage())
                 );
             }
-        }, "FetchRooms-Thread").start();
+        }).start();
     }
 
     /** Creates a new room and waits for GAME_START. */
@@ -118,25 +126,27 @@ public class RoomController {
         }, "CreateRoom-Thread").start();
     }
 
-    /** Quick‐join: joins first open room or prompts to create if none. */
+    /** Quick‑join: pick the first open room, or prompt to create one. */
     public void handleQuickJoin() {
-        Optional<RoomView> open = availableRooms.stream()
+        // look in your plain List<RoomView>
+        Optional<RoomView> open = rooms.stream()
                 .filter(RoomView::isOpen)
                 .findFirst();
 
         if (open.isPresent()) {
             joinRoom(open.get().getRoomId());
         } else {
+            // must be on FX thread to show alerts
             Platform.runLater(() -> {
                 Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
                 confirm.setTitle("No Open Rooms");
-                confirm.setHeaderText("No rooms available.");
-                confirm.setContentText("Create a new room?");
+                confirm.setHeaderText("No rooms available");
+                confirm.setContentText("Would you like to create a new room instead?");
                 Optional<ButtonType> res = confirm.showAndWait();
                 if (res.isPresent() && res.get() == ButtonType.OK) {
                     handleCreateRoom();
                 } else {
-                    Platform.runLater(app::showRoomScene);
+                    app.showRoomScene();
                 }
             });
         }
@@ -235,7 +245,7 @@ public class RoomController {
     private void showWaiting(String text) {
         Platform.runLater(() -> {
             messageLabel.setText(text);
-            roomListView.setDisable(true);
+            roomListArea.setDisable(true);   // disable your TextArea
             roomIdField.setDisable(true);
         });
     }

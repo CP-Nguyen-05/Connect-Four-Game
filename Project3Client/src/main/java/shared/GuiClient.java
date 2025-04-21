@@ -1,3 +1,4 @@
+package shared;
 import shared.User;
 import shared.Message;
 import shared.MessageType;

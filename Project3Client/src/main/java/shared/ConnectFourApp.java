@@ -1,10 +1,11 @@
-import shared.User;
+package shared;
 
-import shared.MessageType;
-import shared.Message;
 import Controller.RoomView;
+import Controller.RoomController;
 
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
@@ -17,6 +18,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import java.net.SocketTimeoutException;
+
+
 
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -31,6 +34,8 @@ public class ConnectFourApp extends Application {
 
     private Scene roomScene;
     private RoomController roomCtrl;
+    private List<RoomView> availableRooms = new ArrayList<>();
+    private TextArea roomListArea;
 
     @Override
     public void start(Stage stage) {
@@ -176,14 +181,19 @@ public class ConnectFourApp extends Application {
         primaryStage.setScene(new Scene(root, 400, 300));
     }
 
-    private void showRoomScene() {
-        // Build UI once
+    public void showRoomScene() {
         if (roomScene == null) {
-            // 1) Create controls
-            ListView<RoomView> listView = new ListView<>(availableRooms);
-            TextField roomIdField       = new TextField();
+            // 1) Create the display area
+            roomListArea = new TextArea();
+            roomListArea.setEditable(false);
+            roomListArea.setPrefRowCount(10);
+            roomListArea.setWrapText(true);
+
+            // 2) Reuse your existing input controls
+            TextField roomIdField = new TextField();
             roomIdField.setPromptText("Enter room ID");
-            Label messageLabel          = new Label();
+
+            Label messageLabel   = new Label();
 
             Button refreshBtn    = new Button("Refresh");
             Button quickJoinBtn  = new Button("Quick Join");
@@ -192,26 +202,25 @@ public class ConnectFourApp extends Application {
             Button spectateBtn   = new Button("Spectate");
             Button backBtn       = new Button("Back");
 
-            // 2) Instantiate the RoomController
+            // 3) Instantiate controller with the plain list + text area
             roomCtrl = new RoomController(
                     conn,
                     currentUser,
                     this,
                     availableRooms,
-                    listView,
+                    roomListArea,
                     roomIdField,
                     messageLabel
             );
 
-            // 3) Wire buttons
-            refreshBtn   .setOnAction(e -> roomCtrl.fetchAvailableRooms());
-            quickJoinBtn .setOnAction(e -> roomCtrl.handleQuickJoin());
-            joinByIdBtn  .setOnAction(e -> roomCtrl.handleJoinRoomById());
-            createBtn    .setOnAction(e -> roomCtrl.handleCreateRoom());
-            spectateBtn  .setOnAction(e -> roomCtrl.handleJoinAsSpectator());
-            backBtn      .setOnAction(e -> showOptionMenuScene());
+            // 4) Wire buttons
+            refreshBtn  .setOnAction(e -> roomCtrl.fetchAvailableRooms());
+            quickJoinBtn.setOnAction(e -> roomCtrl.handleQuickJoin());
+            joinByIdBtn .setOnAction(e -> roomCtrl.handleJoinRoomById());
+            createBtn   .setOnAction(e -> roomCtrl.handleCreateRoom());
+            spectateBtn .setOnAction(e -> roomCtrl.handleJoinAsSpectator());
+            backBtn     .setOnAction(e -> showOptionMenuScene());
 
-            // 4) Layout
             HBox idRow   = new HBox(8, roomIdField, joinByIdBtn, spectateBtn);
             idRow.setAlignment(Pos.CENTER);
             HBox buttons = new HBox(10, refreshBtn, quickJoinBtn, createBtn, backBtn);
@@ -219,7 +228,7 @@ public class ConnectFourApp extends Application {
 
             VBox root = new VBox(15,
                     new Label("Available Rooms"),
-                    listView,
+                    roomListArea,
                     idRow,
                     messageLabel,
                     buttons
@@ -227,10 +236,9 @@ public class ConnectFourApp extends Application {
             root.setPadding(new Insets(20));
             root.setAlignment(Pos.CENTER);
 
-            roomScene = new Scene(root, 500, 400);
+            roomScene = new Scene(root, 500, 450);
         }
 
-        // Show the scene and load data
         primaryStage.setScene(roomScene);
         roomCtrl.fetchAvailableRooms();
     }
@@ -239,7 +247,7 @@ public class ConnectFourApp extends Application {
 
 
 
-    private void showGameScene() {
+    public void showGameScene() {
         // build your 7×6 GridPane of Circles here,
         // add click‑handlers that call client.send(MOVE) and
         // update the board locally.
