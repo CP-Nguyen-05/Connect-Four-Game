@@ -6,14 +6,13 @@ import shared.Room;
 import shared.RoomManager;
 import server.UserService;
 
-
+import java.net.SocketException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.UUID;
-
 
 /**
  * Handles one client socket: LOGIN handshake, then chat/move routing.
@@ -53,9 +52,9 @@ public class ConnectionHandler implements Runnable {
     @Override
     public void run() {
         try {
-            // 1) set up streams (out first!)
+            // 1) Set up streams (out first!)
             out = new ObjectOutputStream(socket.getOutputStream());
-            in  = new ObjectInputStream(socket.getInputStream());
+            in = new ObjectInputStream(socket.getInputStream());
 
             // 2) LOGIN handshake
             while (true) {
@@ -92,10 +91,9 @@ public class ConnectionHandler implements Runnable {
 
                     case LOGIN:
                         String uname = msg.getSender();
-                        String pwd   = msg.getContent();
+                        String pwd = msg.getContent();
 
                         if (!userService.usernameExists(uname)) {
-                            // user not found
                             sendMessage(new Message(
                                     UUID.randomUUID().toString(),
                                     MessageType.ERROR,
@@ -104,9 +102,7 @@ public class ConnectionHandler implements Runnable {
                                     uname,
                                     System.currentTimeMillis()
                             ));
-                        }
-                        else if (userService.validateCredentials(uname, pwd) == null) {
-                            // wrong password
+                        } else if (userService.validateCredentials(uname, pwd) == null) {
                             sendMessage(new Message(
                                     UUID.randomUUID().toString(),
                                     MessageType.ERROR,
@@ -115,9 +111,7 @@ public class ConnectionHandler implements Runnable {
                                     uname,
                                     System.currentTimeMillis()
                             ));
-                        }
-                        else {
-                            // success!
+                        } else {
                             this.username = uname;
                             server.broadcast(new Message(
                                     UUID.randomUUID().toString(),
@@ -131,7 +125,6 @@ public class ConnectionHandler implements Runnable {
                         break;
 
                     default:
-                        // unexpected during handshake
                         sendMessage(new Message(
                                 UUID.randomUUID().toString(),
                                 MessageType.ERROR,
@@ -142,13 +135,12 @@ public class ConnectionHandler implements Runnable {
                         ));
                 }
                 if (username != null) {
-                    // LOGIN succeeded
                     System.out.println(username + " connected to the server.");
                     break;
                 }
             }
 
-            // 3) Main loop: route CHAT and MOVE
+            // 3) Main loop: route CHAT, MOVE, DELETE_ACCOUNT, and other messages
             while (true) {
                 Message msg = readMessage();
                 switch (msg.getType()) {
@@ -158,20 +150,71 @@ public class ConnectionHandler implements Runnable {
                     case MOVE:
                         server.broadcast(msg);
                         break;
-                    // TODO: handle CREATE_ROOM, JOIN_ROOM, etc.
+                    case DELETE_ACCOUNT:
+                        String user = msg.getSender();
+                        String pass = msg.getContent();
+                        boolean ok = false;
+                        try {
+                            ok = userService.deleteUser(user, pass);
+                        } catch (Exception ex) {
+                            System.err.println("Error deleting user " + user + ": " + ex.getMessage());
+                            ex.printStackTrace();
+                            sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.ERROR,
+                                    "Server error: unable to delete account.",
+                                    "SERVER",
+                                    user,
+                                    System.currentTimeMillis()
+                            ));
+                            break;
+                        }
+                        if (ok) {
+                            sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.CHAT,
+                                    "Account deleted successfully.",
+                                    "SERVER",
+                                    user,
+                                    System.currentTimeMillis()
+                            ));
+                            // Log the deletion
+                            System.out.println(user + " has deleted their account.");
+                            // Close the socket and exit the loop
+                            try {
+                                socket.close();
+                            } catch (IOException ignore) {}
+                            throw new SocketException("Connection closed after DELETE_ACCOUNT");
+                        } else {
+                            sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.ERROR,
+                                    "Password incorrect; cannot delete account.",
+                                    "SERVER",
+                                    user,
+                                    System.currentTimeMillis()
+                            ));
+                        }
+                        break;
                     default:
-                        // ignore unknown types
+                        sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.ERROR,
+                                "Invalid message type: " + msg.getType(),
+                                "SERVER",
+                                msg.getSender(),
+                                System.currentTimeMillis()
+                        ));
                 }
             }
         } catch (EOFException eof) {
-            // client disconnected
+        } catch (SocketException se) {
         } catch (Exception e) {
-            e.printStackTrace();
         } finally {
-            // cleanup
+            // Cleanup
             server.removeClient(this);
             if (username != null) {
-                System.out.println(username + " disconnected to the server.");
+                System.out.println(username + " disconnected from the server.");
                 server.broadcast(new Message(
                         UUID.randomUUID().toString(),
                         MessageType.CHAT,
@@ -181,7 +224,9 @@ public class ConnectionHandler implements Runnable {
                         System.currentTimeMillis()
                 ));
             }
-            try { socket.close(); } catch (IOException ignore) {}
+            try {
+                socket.close();
+            } catch (IOException ignore) {}
         }
     }
 

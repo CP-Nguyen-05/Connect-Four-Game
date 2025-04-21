@@ -5,6 +5,7 @@ import shared.Message;
 
 import java.util.UUID;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -12,6 +13,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import java.net.SocketTimeoutException;
+
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
@@ -187,10 +192,6 @@ public class ConnectFourApp extends Application {
         // update the board locally.
     }
 
-    private void showProfileScene() {
-        // Label displayName = new Label(currentUser.getDisplayName());
-        // etc.
-    }
 
     private void showHowToPlayScene() {
         TextArea howTo = new TextArea("Rules:\n1. … \n2. …");
@@ -200,6 +201,119 @@ public class ConnectFourApp extends Application {
         VBox root = new VBox(10, howTo, back);
         root.setPadding(new Insets(20));
         primaryStage.setScene(new Scene(root, 400, 400));
+    }
+    private void showProfileScene() {
+        // Build labels from currentUser
+        Label nameLbl  = new Label("Display Name:   " + currentUser.getDisplayName());
+        Label userLbl  = new Label("Username:       " + currentUser.getUsername());
+        Label scoreLbl = new Label("Score:          " + currentUser.getScore());
+        Label playedLbl= new Label("Games Played:   " + currentUser.getGamesPlayed());
+        Label winLbl   = new Label("Wins:           " + currentUser.getWinCount());
+        Label lossLbl  = new Label("Losses:         " + currentUser.getLossCount());
+        Label drawLbl  = new Label("Draws:          " + currentUser.getDrawCount());
+
+        // Home button
+        Button homeBtn = new Button("Home");
+        homeBtn.setOnAction(e -> showOptionMenuScene());
+
+        // Delete account button
+        Button delBtn = new Button("Delete Account");
+        delBtn.setOnAction(e -> showDeleteAccountConfirm());
+
+        VBox root = new VBox(10,
+                nameLbl, userLbl,
+                scoreLbl, playedLbl,
+                winLbl, lossLbl, drawLbl,
+                new HBox(10, homeBtn, delBtn)
+        );
+        root.setPadding(new Insets(20));
+        primaryStage.setScene(new Scene(root, 350, 300));
+    }
+    private void showDeleteAccountConfirm() {
+        Label confirm = new Label("Are you sure you want to delete\nyour account?");
+        confirm.setWrapText(true);
+
+        Button yes = new Button("Yes");
+        Button no = new Button("No");
+
+        yes.setOnAction(e -> {
+            yes.setDisable(true);
+            no.setDisable(true);
+            confirm.setText("Deleting account...");
+
+            new Thread(() -> {
+                try {
+                    Message del = new Message(
+                            UUID.randomUUID().toString(),
+                            MessageType.DELETE_ACCOUNT,
+                            currentUser.getPassword(),
+                            currentUser.getUsername(),
+                            null,
+                            System.currentTimeMillis()
+                    );
+                    System.out.println("Sending DELETE_ACCOUNT message for user: " + currentUser.getUsername());
+                    conn.sendMessage(del);
+
+                    Message reply = conn.receiveMessage();
+                    System.out.println("Received response: " + reply.getType() + " - " + reply.getContent());
+
+                    Platform.runLater(() -> {
+                        if (reply.getType() == MessageType.ERROR) {
+                            new Alert(AlertType.ERROR, reply.getContent()).showAndWait();
+                            showProfileScene();
+                        } else if (reply.getType() == MessageType.CHAT && reply.getContent().equals("Account deleted successfully.")) {
+                            try {
+                                conn.close();
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            conn = null;
+                            currentUser = null;
+                            showLoginScene();
+                        } else {
+                            new Alert(AlertType.ERROR, "Unexpected server response.").showAndWait();
+                            showProfileScene();
+                        }
+                    });
+                } catch (SocketTimeoutException ex) {
+                    System.err.println("Timeout waiting for server response: " + ex.getMessage());
+                    Platform.runLater(() -> {
+                        new Alert(AlertType.ERROR, "Server response timed out.").showAndWait();
+                        try {
+                            conn.close();
+                        } catch (Exception ex2) {
+                            ex2.printStackTrace();
+                        }
+                        conn = null;
+                        currentUser = null;
+                        showLoginScene();
+                    });
+                } catch (Exception ex) {
+                    System.err.println("Error during DELETE_ACCOUNT: " + ex.getMessage());
+                    ex.printStackTrace();
+                    Platform.runLater(() -> {
+                        new Alert(AlertType.ERROR, "Network error: " + ex.getMessage()).showAndWait();
+                        try {
+                            conn.close();
+                        } catch (Exception ex2) {
+                            ex2.printStackTrace();
+                        }
+                        conn = null;
+                        currentUser = null;
+                        showLoginScene();
+                    });
+                }
+            }, "DeleteAccount-Thread").start();
+        });
+
+        no.setOnAction(e -> showProfileScene());
+
+        HBox buttons = new HBox(10, yes, no);
+        VBox root = new VBox(10, confirm, buttons);
+        root.setPadding(new Insets(20));
+        root.setAlignment(Pos.CENTER);
+
+        primaryStage.setScene(new Scene(root, 300, 150));
     }
 
     public static void main(String[] args) {

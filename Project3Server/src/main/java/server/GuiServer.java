@@ -20,6 +20,7 @@ public class GuiServer extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		logArea = new TextArea();
+		logArea.setPref
 		logArea.setEditable(false);
 
 		VBox root = new VBox(10, logArea);

@@ -2,6 +2,7 @@ package shared;
 public enum MessageType {
     LOGIN,       // client → server: authenticate
     REGISTER,    // client → server: create account
+    DELETE_ACCOUNT,
     CREATE_ROOM, // client → server: create a new game room
     JOIN_ROOM,   // client → server: join a specific room
     QUICK_JOIN,  // client → server: join any open room
