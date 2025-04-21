@@ -115,11 +115,27 @@ public class ConnectFourApp extends Application {
                 Message reply = conn.receiveMessage();
                 if (reply.getType() == MessageType.ERROR) {
                     msgLbl.setText(reply.getContent());
-                } else {
-                    // LOGIN successful!
-                    currentUser = new User(u, u, p, 0,0,0,0,0);
+                }
+                else if (reply.getType() == MessageType.LOGIN_SUCCESS) {
+                    // Split the CSV back into fields:
+                    String[] parts = reply.getContent().split(",", -1);
+                    // parts[0]=displayName,1=username,2=password,3=score,4=gamesPlayed,5=winCount,6=lossCount,7=drawCount
+                    currentUser = new User(
+                            parts[0],
+                            parts[1],
+                            parts[2],
+                            Integer.parseInt(parts[3]),
+                            Integer.parseInt(parts[4]),
+                            Integer.parseInt(parts[5]),
+                            Integer.parseInt(parts[6]),
+                            Integer.parseInt(parts[7])
+                    );
                     showOptionMenuScene();
                 }
+                else {
+                    msgLbl.setText("Unexpected response: " + reply.getType());
+                }
+
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -261,7 +277,7 @@ public class ConnectFourApp extends Application {
                         if (reply.getType() == MessageType.ERROR) {
                             new Alert(AlertType.ERROR, reply.getContent()).showAndWait();
                             showProfileScene();
-                        } else if (reply.getType() == MessageType.CHAT && reply.getContent().equals("Account deleted successfully.")) {
+                        } else if (reply.getType() == MessageType.DELETE_ACCOUNT_SUCCESS ) {
                             try {
                                 conn.close();
                             } catch (Exception ex) {

@@ -112,15 +112,44 @@ public class ConnectionHandler implements Runnable {
                                     System.currentTimeMillis()
                             ));
                         } else {
+                            // 1) Mark this handler as logged‐in
                             this.username = uname;
-                            server.broadcast(new Message(
+
+                            // 2) Load the real User (with stats) from disk
+                            User realUser = userService.validateCredentials(uname, pwd);
+
+                            // 3) Build a CSV payload matching your players.txt format
+                            String payload = String.join(",",
+                                    realUser.getDisplayName(),
+                                    realUser.getUsername(),
+                                    realUser.getPassword(),
+                                    String.valueOf(realUser.getScore()),
+                                    String.valueOf(realUser.getGamesPlayed()),
+                                    String.valueOf(realUser.getWinCount()),
+                                    String.valueOf(realUser.getLossCount()),
+                                    String.valueOf(realUser.getDrawCount())
+                            );
+
+                            // 4) Send it back as LOGIN_SUCCESS
+                            sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.LOGIN_SUCCESS,
+                                    payload,
+                                    "SERVER",
+                                    uname,
+                                    System.currentTimeMillis()
+                            ));
+
+                            // 5) (Optional) announce the lobby join
+                            Message joinedMsg = new Message(
                                     UUID.randomUUID().toString(),
                                     MessageType.CHAT,
                                     uname + " joined the lobby.",
                                     "SERVER",
                                     null,
                                     System.currentTimeMillis()
-                            ));
+                            );
+                            server.broadcastExcept(joinedMsg, this);
                         }
                         break;
 
@@ -172,7 +201,7 @@ public class ConnectionHandler implements Runnable {
                         if (ok) {
                             sendMessage(new Message(
                                     UUID.randomUUID().toString(),
-                                    MessageType.CHAT,
+                                    MessageType.DELETE_ACCOUNT_SUCCESS,
                                     "Account deleted successfully.",
                                     "SERVER",
                                     user,
@@ -195,7 +224,8 @@ public class ConnectionHandler implements Runnable {
                                     System.currentTimeMillis()
                             ));
                         }
-                        break;
+                        return;
+                        //break;
                     default:
                         sendMessage(new Message(
                                 UUID.randomUUID().toString(),
@@ -215,14 +245,15 @@ public class ConnectionHandler implements Runnable {
             server.removeClient(this);
             if (username != null) {
                 System.out.println(username + " disconnected from the server.");
-                server.broadcast(new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.CHAT,
-                        username + " left the lobby.",
-                        "SERVER",
-                        null,
-                        System.currentTimeMillis()
-                ));
+                server.broadcastExcept(
+                        new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.CHAT,
+                                username + " left the lobby.",
+                                "SERVER",
+                                null,
+                                System.currentTimeMillis()
+                        ),this);
             }
             try {
                 socket.close();

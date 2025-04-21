@@ -33,13 +33,18 @@ public class Server {
 		}
 	}
 
-	/**
-	 * Broadcast a message to all connected clients.
-	 */
-	public void broadcast(Message msg) {
+	/** Broadcast to everyone _except_ the origin handler. */
+	public void broadcastExcept(Message msg, ConnectionHandler exclude) {
 		for (ConnectionHandler ch : clients) {
-			ch.sendMessage(msg);
+			if (ch != exclude) {
+				ch.sendMessage(msg);
+			}
 		}
+	}
+
+	/** Broadcast to absolutely everyone. */
+	public void broadcast(Message msg) {
+		broadcastExcept(msg, null);
 	}
 
 	/**
