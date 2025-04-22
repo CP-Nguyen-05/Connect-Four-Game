@@ -30,7 +30,27 @@ public class UserService {
         store.saveUsers(all);
         return true;
     }
-
+    public void updateAndSaveStats(String winnerUsername, String loserUsername, boolean isDraw) {
+        List<User> all = store.loadUsers();
+        for (User u : all) {
+            if (u.getUsername().equals(winnerUsername)) {
+                if (isDraw) {
+                    u.setDrawCount(u.getDrawCount() + 1);
+                } else {
+                    u.setWinCount(u.getWinCount() + 1);
+                }
+                u.setGamesPlayed(u.getGamesPlayed() + 1);
+            } else if (u.getUsername().equals(loserUsername)) {
+                if (isDraw) {
+                    u.setDrawCount(u.getDrawCount() + 1);
+                } else {
+                    u.setLossCount(u.getLossCount() + 1);
+                }
+                u.setGamesPlayed(u.getGamesPlayed() + 1);
+            }
+        }
+        store.saveUsers(all);
+    }
     public boolean deleteUser(String username, String password) {
         List<User> all = store.loadUsers();
         boolean removed = all.removeIf(u ->

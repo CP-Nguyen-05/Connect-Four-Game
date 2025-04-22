@@ -104,7 +104,14 @@ public class RoomController {
 
     /** Creates a new room and waits for GAME_START. */
     public void handleCreateRoom() {
-        showWaiting("Creating room…");
+        // 1) immediately switch to a “waiting” UI
+        Platform.runLater(() -> {
+            messageLabel.setText("Waiting for an opponent to join…");
+            roomListArea.setDisable(true);
+            roomIdField.setDisable(true);
+        });
+
+        // 2) send CREATE_ROOM and then block until GAME_START
         new Thread(() -> {
             try {
                 conn.sendMessage(new Message(
@@ -115,11 +122,12 @@ public class RoomController {
                         null,
                         System.currentTimeMillis()
                 ));
-                waitForGameStart();
+                Platform.runLater(() -> app.showWaitingScene());
+                waitForGameStart();   // loops until GAME_START
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Platform.runLater(() -> {
-                    showError("Create failed: " + ex.getMessage());
+                    showError("Failed to create room: " + ex.getMessage());
                     app.showRoomScene();
                 });
             }
@@ -239,7 +247,14 @@ public class RoomController {
         do {
             m = conn.receiveMessage();
         } while (m.getType() != MessageType.GAME_START);
-        Platform.runLater(app::showGameScene);
+
+        String roomId = m.getContent();
+        Platform.runLater(() -> {
+            // 1) tell the App which room we’re in
+            app.setCurrentRoomId(roomId);
+            // 2) switch into the actual game scene
+            app.showGameScene();
+        });
     }
 
     private void showWaiting(String text) {

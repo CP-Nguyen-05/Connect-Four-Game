@@ -6,6 +6,11 @@ import shared.Room;
 import shared.RoomManager;
 import server.UserService;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.Optional;
 import java.net.SocketException;
 import java.io.EOFException;
 import java.io.IOException;
@@ -26,6 +31,8 @@ public class ConnectionHandler implements Runnable {
     private ObjectInputStream  in;
     private ObjectOutputStream out;
     private String username;
+    private User user;
+    private String currentRoomId;
 
     public ConnectionHandler(Socket socket, Server server) {
         this.socket = socket;
@@ -114,10 +121,9 @@ public class ConnectionHandler implements Runnable {
                         } else {
                             // 1) Mark this handler as logged‐in
                             this.username = uname;
-
                             // 2) Load the real User (with stats) from disk
                             User realUser = userService.validateCredentials(uname, pwd);
-
+                            this.user = realUser;
                             // 3) Build a CSV payload matching your players.txt format
                             String payload = String.join(",",
                                     realUser.getDisplayName(),
@@ -140,16 +146,7 @@ public class ConnectionHandler implements Runnable {
                                     System.currentTimeMillis()
                             ));
 
-                            // 5) (Optional) announce the lobby join
-                            Message joinedMsg = new Message(
-                                    UUID.randomUUID().toString(),
-                                    MessageType.CHAT,
-                                    uname + " joined the lobby.",
-                                    "SERVER",
-                                    null,
-                                    System.currentTimeMillis()
-                            );
-                            server.broadcastExcept(joinedMsg, this);
+
                         }
                         break;
 
@@ -177,7 +174,22 @@ public class ConnectionHandler implements Runnable {
                         handleChat(msg);
                         break;
                     case MOVE:
-                        server.broadcast(msg);
+                        if (currentRoomId != null) {
+                            // forward only to the _other_ player in your room
+                            server.getRoomManager()
+                                    .findRoomById(currentRoomId)
+                                    .ifPresent(room -> {
+                                        room.getPlayers().stream()
+                                                .map(User::getUsername)
+                                                .filter(un -> !un.equals(username))
+                                                .forEach(other -> {
+                                                    ConnectionHandler opp = server.findByUsername(other);
+                                                    if (opp != null) opp.sendMessage(msg);
+                                                });
+                                    });
+                        } else {
+                            server.broadcast(msg);
+                        }
                         break;
                     case DELETE_ACCOUNT:
                         String user = msg.getSender();
@@ -212,7 +224,8 @@ public class ConnectionHandler implements Runnable {
                             // Close the socket and exit the loop
                             try {
                                 socket.close();
-                            } catch (IOException ignore) {}
+                            } catch (IOException ignore) {
+                            }
                             throw new SocketException("Connection closed after DELETE_ACCOUNT");
                         } else {
                             sendMessage(new Message(
@@ -225,14 +238,143 @@ public class ConnectionHandler implements Runnable {
                             ));
                         }
                         return;
-                        //break;
+                    //break;
                     //TO DO
                     case LIST_ROOMS:
-                        //List<Room> rooms = server.getRoomManager().getOpenRooms();
+                        List<Room> rooms = server.getRoomManager().getOpenRooms();
+                        // payload format example: room1|0|2|true;room2|1|2|true;room3|2|2|false
+                        String payload = rooms.stream()
+                                .map(r -> String.join("|",
+                                        r.getRoomId(),
+                                        Integer.toString(r.getPlayers().size()),
+                                        Integer.toString(r.getMaxPlayerCapacity()),
+                                        Boolean.toString(r.isOpenForPlayers())))
+                                .collect(Collectors.joining(";"));
+                        sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.ROOM_LIST,
+                                payload,
+                                "SERVER",
+                                msg.getSender(),
+                                System.currentTimeMillis()
+                        ));
                         break;
                     case JOIN_ROOM:
+                        String roomId = msg.getContent();
+                        Optional<Room> opt = server.getRoomManager().findRoomById(roomId);
+                        if (opt.isEmpty()) {
+                            sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.ERROR,
+                                    "Room not found: " + roomId,
+                                    "SERVER",
+                                    username,
+                                    System.currentTimeMillis()
+                            ));
+                        } else {
+                            Room room = opt.get();
+                            if (!room.isOpenForPlayers()) {
+                                sendMessage(new Message(
+                                        UUID.randomUUID().toString(),
+                                        MessageType.ERROR,
+                                        "Room is full: " + roomId,
+                                        "SERVER",
+                                        username,
+                                        System.currentTimeMillis()
+                                ));
+                            } else {
+                                // 1) join
+                                room.addPlayer(this.user);
+                                this.currentRoomId = roomId;      // ← mark “in this room”
+                                System.out.println(username + " joined " + roomId);
+
+                                // 2) if it's now full, start the game:
+                                if (!room.isOpenForPlayers()) {
+                                    User u1 = room.getPlayers().get(0);
+                                    User u2 = room.getPlayers().get(1);
+                                    ConnectionHandler ch1 = server.findByUsername(u1.getUsername());
+                                    ConnectionHandler ch2 = server.findByUsername(u2.getUsername());
+
+                                    // tell both to switch to game UI
+                                    for (ConnectionHandler ch : List.of(ch1, ch2)) {
+                                        ch.sendMessage(new Message(
+                                                UUID.randomUUID().toString(),
+                                                MessageType.GAME_START,
+                                                roomId,
+                                                "SERVER",
+                                                ch.getUsername(),
+                                                System.currentTimeMillis()
+                                        ));
+                                    }
+
+                                    // hand off to your GameSession runner
+                                   // new Thread(new GameSession(ch1, ch2), "GameSession-" + roomId).start();
+                                }
+                            }
+                        }
                         break;
                     case CREATE_ROOM:
+                        // make a new room and add this user
+                        Room newRoom = server.getRoomManager().createRoom();
+                        newRoom.addPlayer(this.user);
+                        System.out.println(username + " created " + newRoom.getRoomId());
+                        this.currentRoomId = newRoom.getRoomId();
+                        sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.ROOM_CREATED,
+                                currentRoomId,
+                                "SERVER",
+                                username,
+                                System.currentTimeMillis()
+                        ));
+                        break;
+                    case SURRENDER:
+                        String loser = msg.getSender();
+                        roomId = msg.getContent();      // client sent the roomId
+                        server.getRoomManager().findRoomById(roomId).ifPresent(room -> {
+                            // figure out who won/lost
+                            List<User> players = room.getPlayers();
+                            User loserUser  = players.stream()
+                                    .filter(u -> u.getUsername().equals(loser))
+                                    .findFirst().orElse(null);
+                            User winnerUser = players.stream()
+                                    .filter(u -> !u.getUsername().equals(loser))
+                                    .findFirst().orElse(null);
+
+                            if (loserUser != null && winnerUser != null) {
+                                // 1) notify both clients
+                                for (User u : players) {
+                                    ConnectionHandler ch = server.findByUsername(u.getUsername());
+                                    if (ch == null) continue;
+                                    boolean youWin = u.getUsername().equals(winnerUser.getUsername());
+                                    String result = youWin ? "YOU_WIN" : "YOU_LOSE";
+                                    ch.sendMessage(new Message(
+                                            UUID.randomUUID().toString(),
+                                            MessageType.GAME_END,
+                                            result,
+                                            "SERVER",
+                                            u.getUsername(),
+                                            System.currentTimeMillis()
+                                    ));
+                                }
+
+                                // 2) persist updated stats back to players.txt
+                                UserDataStore ds = new UserDataStore();
+                                List<User> all = ds.loadUsers();
+                                for (User u : all) {
+                                    if (u.getUsername().equals(winnerUser.getUsername())) {
+                                        u.setWinCount(   u.getWinCount()   + 1);
+                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
+                                    } else if (u.getUsername().equals(loserUser.getUsername())) {
+                                        u.setLossCount(  u.getLossCount()  + 1);
+                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
+                                    }
+                                }
+                                ds.saveUsers(all);
+
+                                System.out.println(loser + " surrendered in " + roomId);
+                            }
+                        });
                         break;
 
                     default:
@@ -254,28 +396,22 @@ public class ConnectionHandler implements Runnable {
             server.removeClient(this);
             if (username != null) {
                 System.out.println(username + " disconnected from the server.");
-                server.broadcastExcept(
-                        new Message(
-                                UUID.randomUUID().toString(),
-                                MessageType.CHAT,
-                                username + " left the lobby.",
-                                "SERVER",
-                                null,
-                                System.currentTimeMillis()
-                        ),this);
+
+                try {
+                    socket.close();
+                } catch (IOException ignore) {
+                }
             }
-            try {
-                socket.close();
-            } catch (IOException ignore) {}
         }
     }
 
     private void handleChat(Message msg) {
         String target = msg.getRecipient();
+
+        // 1) Private message (PM)
         if (target != null && !target.isEmpty()) {
-            // private message
+            // can’t PM yourself
             if (target.equals(username)) {
-                // can't PM yourself
                 sendMessage(new Message(
                         UUID.randomUUID().toString(),
                         MessageType.ERROR,
@@ -293,7 +429,6 @@ public class ConnectionHandler implements Runnable {
                 recipientHandler.sendMessage(msg);
                 sendMessage(msg);
             } else {
-                // user not found
                 sendMessage(new Message(
                         UUID.randomUUID().toString(),
                         MessageType.ERROR,
@@ -303,8 +438,22 @@ public class ConnectionHandler implements Runnable {
                         System.currentTimeMillis()
                 ));
             }
+            return;
+        }
+
+        // 2) No recipient → either lobby chat or in‑game chat
+        else if (currentRoomId != null) {
+            // room chat: only send to handlers in the same room
+            server.getRoomManager()
+                    .findRoomById(currentRoomId)
+                    .ifPresent(room -> {
+                        for (User u : room.getPlayers()) {
+                            ConnectionHandler ch = server.findByUsername(u.getUsername());
+                            if (ch != null) ch.sendMessage(msg);
+                        }
+                    });
         } else {
-            // public broadcast
+            // still in the lobby
             server.broadcast(msg);
         }
     }

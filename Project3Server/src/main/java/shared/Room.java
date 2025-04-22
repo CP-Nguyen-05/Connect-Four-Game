@@ -29,4 +29,10 @@ public class Room {
     public String getRoomId() {
         return roomId;
     }
+    public List<User> getPlayers() {
+        return players;
+    }
+    public int getMaxPlayerCapacity() {
+        return maxPlayerCapacity;
+    }
 }

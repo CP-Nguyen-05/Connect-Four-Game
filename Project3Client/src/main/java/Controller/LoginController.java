@@ -6,7 +6,6 @@ public class LoginController {
     public Label messageLabel;
 
     public void handleLogin() {
-        // TODO: send LOGIN via ClientConnection and on success call
-        //       switchScene("OptionMenu.fxml")
+
     }
 }

@@ -15,9 +15,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.shape.Circle;
+import javafx.scene.paint.Color;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import java.net.SocketTimeoutException;
+import javafx.scene.control.ProgressIndicator;
 
 
 
@@ -25,6 +29,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import java.io.IOException;
 
 public class ConnectFourApp extends Application {
     private Stage primaryStage;
@@ -32,10 +37,15 @@ public class ConnectFourApp extends Application {
     private Client client;  // or ClientConnection + Client wrapper
     private ClientConnection conn;
 
-    private Scene roomScene;
+    private Scene roomScene, waitingScene, gameScene;
+    private String currentRoomId;
+    private TextArea chatArea;
     private RoomController roomCtrl;
     private List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
+    public void setCurrentRoomId(String id) {
+        this.currentRoomId = id;
+    }
 
     @Override
     public void start(Stage stage) {
@@ -243,14 +253,196 @@ public class ConnectFourApp extends Application {
         roomCtrl.fetchAvailableRooms();
     }
 
+    public void showWaitingScene() {
+        if (waitingScene == null) {
+            Label lbl = new Label("Waiting for an opponent to join…");
+            lbl.setWrapText(true);
+            ProgressIndicator spinner = new ProgressIndicator();
+            VBox root = new VBox(20, spinner, lbl);
+            root.setAlignment(Pos.CENTER);
+            root.setPadding(new Insets(30));
+            waitingScene = new Scene(root, 400, 200);
+        }
+        primaryStage.setScene(waitingScene);
+    }
+
+
 
 
 
 
     public void showGameScene() {
-        // build your 7×6 GridPane of Circles here,
-        // add click‑handlers that call client.send(MOVE) and
-        // update the board locally.
+        // ——— Build the Connect‐4 grid (7 cols × 6 rows) ———
+        GridPane board = new GridPane();
+        board.setHgap(5);
+        board.setVgap(5);
+        board.setPadding(new Insets(10));
+        Circle[][] cells = new Circle[6][7];
+        for (int row = 0; row < 6; row++) {
+            for (int col = 0; col < 7; col++) {
+                Circle cell = new Circle(20, Color.LIGHTGRAY);
+                cell.setStroke(Color.DARKGRAY);
+                final int c = col;
+                cell.setOnMouseClicked(e -> {
+                    try {
+                        conn.sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.MOVE,
+                                Integer.toString(c),
+                                currentUser.getUsername(),
+                                null,
+                                System.currentTimeMillis()
+                        ));
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                });
+                cells[row][col] = cell;
+                board.add(cell, col, row);
+            }
+        }
+
+        // ——— Build the chat panel ———
+        chatArea = new TextArea();
+        chatArea.setEditable(false);
+        chatArea.setWrapText(true);
+        chatArea.setPrefWidth(250);
+        chatArea.setPrefHeight(300);
+
+        TextField chatInput = new TextField();
+        chatInput.setPromptText("Type message...");
+        Button sendBtn = new Button("Send");
+        sendBtn.setOnAction(e -> {
+            String text = chatInput.getText().trim();
+            if (!text.isEmpty()) {
+                try {
+                    conn.sendMessage(new Message(
+                            UUID.randomUUID().toString(),
+                            MessageType.CHAT,
+                            text,
+                            currentUser.getUsername(),
+                            null,
+                            System.currentTimeMillis()
+                    ));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                chatInput.clear();
+            }
+        });
+
+        HBox chatForm = new HBox(5, chatInput, sendBtn);
+        chatForm.setAlignment(Pos.CENTER);
+
+        // ——— Surrender button ———
+        Button surrenderBtn = new Button("Surrender");
+        surrenderBtn.setOnAction(e -> {
+            try {
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.SURRENDER,
+                        currentRoomId,
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        VBox chatPane = new VBox(10,
+                new Label("Chat"),
+                chatArea,
+                chatForm,
+                surrenderBtn
+        );
+        chatPane.setPadding(new Insets(10));
+        chatPane.setAlignment(Pos.CENTER);
+
+        // ——— Combine board + chat in one scene ———
+        HBox root = new HBox(20, board, chatPane);
+        root.setPadding(new Insets(10));
+        gameScene = new Scene(root, 700, 400);
+
+        primaryStage.setScene(gameScene);
+
+        // ——— Start a background listener for incoming messages ———
+        new Thread(() -> {
+            try {
+                while (true) {
+                    Message msg = conn.receiveMessage();
+                    switch (msg.getType()) {
+                        case CHAT:
+                            Platform.runLater(() ->
+                                    chatArea.appendText(msg.getSender() + ": " + msg.getContent() + "\n")
+                            );
+                            break;
+
+                        case MOVE:
+                            // payload is the column index, server must also tell row.
+                            // here we assume server encodes "col,row" in content:
+                            String[] parts = msg.getContent().split(",", -1);
+                            int col = Integer.parseInt(parts[0]);
+                            int row = Integer.parseInt(parts[1]);
+                            Color color = msg.getSender().equals(currentUser.getUsername())
+                                    ? Color.RED : Color.YELLOW;
+                            Platform.runLater(() ->
+                                    cells[row][col].setFill(color)
+                            );
+                            break;
+
+                        case GAME_END:
+                            Platform.runLater(() -> {
+                                int checkResult;
+                                AlertType type = AlertType.INFORMATION;
+                                String result="";
+                                if (msg.getContent().equals("YOU_WIN")){
+                                    checkResult =0;
+                                }
+                                else if (msg.getContent().equals("YOU_LOSE")){
+                                    checkResult =1;
+                                }
+                                else{
+                                    checkResult =2;
+                                }
+                                if (checkResult == 0 || checkResult == 2){
+                                    type = AlertType.INFORMATION;
+                                }
+                                if (checkResult == 0){
+                                    result = "You won!";
+                                }
+                                else if (checkResult == 1){
+                                    result = "You lost!";
+                                }
+                                else{
+                                    result = "Draw!";
+                                }
+                                new Alert(type, result).showAndWait();
+                                if (checkResult == 0) {
+                                    this.currentUser.setWinCount(this.currentUser.getWinCount()+1);
+                                }
+                                else if (checkResult == 1) {
+                                    this.currentUser.setDrawCount(this.currentUser.getDrawCount()+1);
+                                }
+                                else{
+                                    this.currentUser.setLossCount(this.currentUser.getLossCount()+1);
+                                }
+
+                                this.currentUser.setGamesPlayed(this.currentUser.getGamesPlayed()+1);
+
+                                showOptionMenuScene();
+                            });
+                            return;  // stop listening
+
+                        default:
+                            break;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, "GameListener-Thread").start();
     }
 
 
