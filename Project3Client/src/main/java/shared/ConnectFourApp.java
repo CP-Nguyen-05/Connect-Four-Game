@@ -37,6 +37,9 @@ public class ConnectFourApp extends Application {
     private Client client;  // or ClientConnection + Client wrapper
     private ClientConnection conn;
 
+    private LoginController    loginCtrl;
+    private RegisterController registerCtrl;
+
     private Scene roomScene, waitingScene, gameScene;
     private String currentRoomId;
     private TextArea chatArea;
@@ -51,127 +54,41 @@ public class ConnectFourApp extends Application {
     public void start(Stage stage) {
         this.primaryStage = stage;
         stage.setTitle("Connect Four");
+
+        loginCtrl   = new LoginController(this);
+        registerCtrl = new RegisterController(this);
+
         showLoginScene();
         stage.show();
     }
-
-    private void showLoginScene() {
-        // Build controls
-        Label userLbl = new Label("Username:");
-        TextField userFld = new TextField();
-        Label passLbl = new Label("Password:");
-        PasswordField passFld = new PasswordField();
-        Label msgLbl  = new Label();      // <-- will show register/login feedback
-
-        Button loginBtn = new Button("Login");
-        Button regBtn   = new Button("Register");
-
-        // REGISTER handler
-        regBtn.setOnAction(e -> {
-            String u = userFld.getText().trim();
-            String p = passFld.getText().trim();
-            if (u.isEmpty() || p.isEmpty()) {
-                msgLbl.setText("Enter both username & password");
-                return;
-            }
-            try {
-                // 1) Connect once
-                if (conn == null) {
-                    conn = new ClientConnection();
-                    conn.connect("localhost", 12345);
-                }
-                // 2) Send REGISTER
-                Message reg = new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.REGISTER,
-                        p,    // password in content
-                        u,    // sender=username
-                        null,
-                        System.currentTimeMillis()
-                );
-                conn.sendMessage(reg);
-
-                // 3) BLOCKING read of server’s reply
-                Message reply = conn.receiveMessage();
-                if (reply.getType() == MessageType.CHAT) {
-                    msgLbl.setText(reply.getContent());
-                } else {
-                    msgLbl.setText("Error: " + reply.getContent());
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                msgLbl.setText("Server error: " + ex.getMessage());
-            }
-        });
-
-        // LOGIN handler
-        loginBtn.setOnAction(e -> {
-            String u = userFld.getText().trim();
-            String p = passFld.getText().trim();
-            if (u.isEmpty() || p.isEmpty()) {
-                msgLbl.setText("Enter both username & password");
-                return;
-            }
-            try {
-                // 1) If we haven’t connected yet, do so now
-                if (conn == null) {
-                    conn = new ClientConnection();
-                    conn.connect("localhost", 12345);
-                }
-
-                // 2) Send LOGIN (no need to REGISTER first)
-                Message login = new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.LOGIN,
-                        p,    // password in content
-                        u,    // sender=username
-                        null,
-                        System.currentTimeMillis()
-                );
-                conn.sendMessage(login);
-
-                // 3) Wait for server reply
-                Message reply = conn.receiveMessage();
-                if (reply.getType() == MessageType.ERROR) {
-                    msgLbl.setText(reply.getContent());
-                }
-                else if (reply.getType() == MessageType.LOGIN_SUCCESS) {
-                    // Split the CSV back into fields:
-                    String[] parts = reply.getContent().split(",", -1);
-                    // parts[0]=displayName,1=username,2=password,3=score,4=gamesPlayed,5=winCount,6=lossCount,7=drawCount
-                    currentUser = new User(
-                            parts[0],
-                            parts[1],
-                            parts[2],
-                            Integer.parseInt(parts[3]),
-                            Integer.parseInt(parts[4]),
-                            Integer.parseInt(parts[5]),
-                            Integer.parseInt(parts[6]),
-                            Integer.parseInt(parts[7])
-                    );
-                    showOptionMenuScene();
-                }
-                else {
-                    msgLbl.setText("Unexpected response: " + reply.getType());
-                }
-
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                msgLbl.setText("Server error: " + ex.getMessage());
-            }
-        });
-
-        // Layout
-        HBox buttons = new HBox(10, loginBtn, regBtn);
-        VBox root = new VBox(10,
-                userLbl, userFld,
-                passLbl, passFld,
-                buttons,
-                msgLbl
+    public ClientConnection getOrCreateConnection() throws IOException {
+        if (conn == null) {
+            conn = new ClientConnection();
+            conn.connect("localhost", 12345);
+        }
+        return conn;
+    }
+    public void finishLogin(String csvPayload) {
+        // parse your CSV into currentUser
+        String[] parts = csvPayload.split(",", -1);
+        currentUser = new User(
+                parts[0], parts[1], parts[2],
+                Integer.parseInt(parts[3]),
+                Integer.parseInt(parts[4]),
+                Integer.parseInt(parts[5]),
+                Integer.parseInt(parts[6]),
+                Integer.parseInt(parts[7])
         );
-        root.setPadding(new Insets(20));
-        primaryStage.setScene(new Scene(root, 320, 240));
+        showOptionMenuScene();
+    }
+
+
+    public void showLoginScene() {
+        primaryStage.setScene(loginCtrl.getScene());
+    }
+
+    public void showRegisterScene() {
+        primaryStage.setScene(registerCtrl.getScene());
     }
 
     private void showOptionMenuScene() {
