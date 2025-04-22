@@ -24,6 +24,9 @@ public class RoomManager {
                 .filter(r -> r.getRoomId().equals(roomId))
                 .findFirst();
     }
+    public synchronized void removeRoom(String roomId) {
+        activeRooms.removeIf(r -> r.getRoomId().equals(roomId));
+    }
 
     public List<Room> getOpenRooms() {
         return new ArrayList<>(activeRooms);

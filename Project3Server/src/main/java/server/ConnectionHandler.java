@@ -372,7 +372,8 @@ public class ConnectionHandler implements Runnable {
                                 }
                                 ds.saveUsers(all);
 
-                                System.out.println(loser + " surrendered in " + roomId);
+                                server.getRoomManager().removeRoom(roomId);
+                                System.out.println(loser + " surrendered in " + roomId + " → room removed");
                             }
                         });
                         break;
@@ -392,6 +393,33 @@ public class ConnectionHandler implements Runnable {
         } catch (SocketException se) {
         } catch (Exception e) {
         } finally {
+
+            if (currentRoomId != null) {
+                // treat as surrender
+                Optional<Room> o = server.getRoomManager().findRoomById(currentRoomId);
+                if (o.isPresent()) {
+                    Room room = o.get();
+                    // notify the other player
+                    for (User u : room.getPlayers()) {
+                        if (u.getUsername().equals(username)) continue;
+                        ConnectionHandler ch = server.findByUsername(u.getUsername());
+                        if (ch != null) {
+                            ch.sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.GAME_END,
+                                    "YOU_WIN",
+                                    "SERVER",
+                                    u.getUsername(),
+                                    System.currentTimeMillis()
+                            ));
+                        }
+                    }
+                    // remove the room so it vanishes from the lobby
+                    server.getRoomManager().removeRoom(currentRoomId);
+                    System.out.println(username + " disconnected, treated as surrender in " + currentRoomId);
+                }
+            }
+
             // Cleanup
             server.removeClient(this);
             if (username != null) {
