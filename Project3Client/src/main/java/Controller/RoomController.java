@@ -41,6 +41,7 @@ public class RoomController {
         this.roomIdField    = roomIdField;
         this.messageLabel   = messageLabel;
     }
+
     /** Fetches open rooms from the server and updates the list. */
     public void fetchAvailableRooms() {
         messageLabel.setText("Loading rooms...");
@@ -60,7 +61,6 @@ public class RoomController {
                     reply = conn.receiveMessage();
                 } while (reply.getType() != MessageType.ROOM_LIST);
 
-                // parse into your plain List<RoomView>
                 List<RoomView> parsed = Arrays.stream(reply.getContent().split(";", -1))
                         .filter(s -> !s.isBlank())
                         .map(chunk -> {
@@ -74,12 +74,10 @@ public class RoomController {
                         })
                         .collect(Collectors.toList());
 
-                // update UI on FX thread
                 Platform.runLater(() -> {
                     rooms.clear();
                     rooms.addAll(parsed);
 
-                    // rebuild the text area
                     StringBuilder sb = new StringBuilder();
                     for (RoomView rv : rooms) {
                         sb.append(String.format("%s  (%d/%d)%s\n",
@@ -99,19 +97,17 @@ public class RoomController {
                         messageLabel.setText("Error: " + ex.getMessage())
                 );
             }
-        }).start();
+        }, "FetchRooms-Thread").start();
     }
 
     /** Creates a new room and waits for GAME_START. */
     public void handleCreateRoom() {
-        // 1) immediately switch to a “waiting” UI
         Platform.runLater(() -> {
             messageLabel.setText("Waiting for an opponent to join…");
             roomListArea.setDisable(true);
             roomIdField.setDisable(true);
         });
 
-        // 2) send CREATE_ROOM and then block until GAME_START
         new Thread(() -> {
             try {
                 conn.sendMessage(new Message(
@@ -122,8 +118,8 @@ public class RoomController {
                         null,
                         System.currentTimeMillis()
                 ));
-                Platform.runLater(() -> app.showWaitingScene());
-                waitForGameStart();   // loops until GAME_START
+                Platform.runLater(app::showWaitingScene);
+                waitForGameStart();
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Platform.runLater(() -> {
@@ -136,7 +132,6 @@ public class RoomController {
 
     /** Quick‑join: pick the first open room, or prompt to create one. */
     public void handleQuickJoin() {
-        // look in your plain List<RoomView>
         Optional<RoomView> open = rooms.stream()
                 .filter(RoomView::isOpen)
                 .findFirst();
@@ -144,18 +139,14 @@ public class RoomController {
         if (open.isPresent()) {
             joinRoom(open.get().getRoomId());
         } else {
-            // must be on FX thread to show alerts
             Platform.runLater(() -> {
                 Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
                 confirm.setTitle("No Open Rooms");
                 confirm.setHeaderText("No rooms available");
                 confirm.setContentText("Would you like to create a new room instead?");
-                Optional<ButtonType> res = confirm.showAndWait();
-                if (res.isPresent() && res.get() == ButtonType.OK) {
-                    handleCreateRoom();
-                } else {
-                    app.showRoomScene();
-                }
+                confirm.showAndWait()
+                        .filter(ButtonType.OK::equals)
+                        .ifPresent(__ -> handleCreateRoom());
             });
         }
     }
@@ -203,26 +194,16 @@ public class RoomController {
     //  Internal helpers
     // ──────────────────────────────────────────────────
 
-    private List<RoomView> parseRoomList(String payload) {
-        if (payload.isBlank()) return Collections.emptyList();
-        return Arrays.stream(payload.split(";", -1))
-                .filter(s -> !s.isBlank())
-                .map(chunk -> {
-                    String[] p = chunk.split("\\|", -1);
-                    return new RoomView(
-                            p[0],
-                            Integer.parseInt(p[1]),
-                            Integer.parseInt(p[2]),
-                            Boolean.parseBoolean(p[3])
-                    );
-                })
-                .collect(Collectors.toList());
-    }
-
     private void joinRoom(String roomId) {
-        showWaiting("Joining room " + roomId + "…");
+        Platform.runLater(() -> {
+            messageLabel.setText("Joining room " + roomId + "…");
+            roomListArea.setDisable(true);
+            roomIdField.setDisable(true);
+        });
+
         new Thread(() -> {
             try {
+                // 1) send one JOIN_ROOM
                 conn.sendMessage(new Message(
                         UUID.randomUUID().toString(),
                         MessageType.JOIN_ROOM,
@@ -231,7 +212,27 @@ public class RoomController {
                         null,
                         System.currentTimeMillis()
                 ));
-                waitForGameStart();
+
+                // 2) wait for exactly one reply
+                Message reply = conn.receiveMessage();
+
+                // 3a) if it's an ERROR, show and go back to lobby
+                if (reply.getType() == MessageType.ERROR) {
+                    Platform.runLater(() -> {
+                        showError(reply.getContent());
+                        app.showRoomScene();
+                    });
+                    return;
+                }
+
+                // 3b) otherwise we expect GAME_START
+                //     the roomId is carried in reply.getContent()
+                String joinedId = reply.getContent();
+                Platform.runLater(() -> {
+                    app.setCurrentRoomId(joinedId);
+                    app.showGameScene();
+                });
+
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Platform.runLater(() -> {
@@ -250,22 +251,20 @@ public class RoomController {
 
         String roomId = m.getContent();
         Platform.runLater(() -> {
-            // 1) tell the App which room we’re in
             app.setCurrentRoomId(roomId);
-            // 2) switch into the actual game scene
             app.showGameScene();
         });
+    }
+
+    private void showError(String text) {
+        new Alert(Alert.AlertType.ERROR, text).showAndWait();
     }
 
     private void showWaiting(String text) {
         Platform.runLater(() -> {
             messageLabel.setText(text);
-            roomListArea.setDisable(true);   // disable your TextArea
+            roomListArea.setDisable(true);
             roomIdField.setDisable(true);
         });
-    }
-
-    private void showError(String text) {
-        Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, text).showAndWait());
     }
 }

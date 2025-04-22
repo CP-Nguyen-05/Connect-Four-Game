@@ -43,6 +43,8 @@ public class ConnectFourApp extends Application {
 
     private Scene roomScene, waitingScene, gameScene;
     private String currentRoomId;
+    private TextField roomIdField;
+    private Label messageLabel;   // ← pull this out
     private TextArea chatArea;
     private RoomController roomCtrl;
     private List<RoomView> availableRooms = new ArrayList<>();
@@ -119,10 +121,10 @@ public class ConnectFourApp extends Application {
             roomListArea.setWrapText(true);
 
             // 2) Reuse your existing input controls
-            TextField roomIdField = new TextField();
+            roomIdField = new TextField();
             roomIdField.setPromptText("Enter room ID");
 
-            Label messageLabel   = new Label();
+            messageLabel   = new Label();
 
             Button refreshBtn    = new Button("Refresh");
             Button quickJoinBtn  = new Button("Quick Join");
@@ -166,6 +168,13 @@ public class ConnectFourApp extends Application {
             root.setAlignment(Pos.CENTER);
 
             roomScene = new Scene(root, 500, 450);
+        }
+        else {
+            // ** re‑enable and clear them any time you come back **
+            roomListArea.setDisable(false);
+            roomIdField.setDisable(false);
+            roomIdField.clear();
+            messageLabel.setText("");
         }
 
         primaryStage.setScene(roomScene);

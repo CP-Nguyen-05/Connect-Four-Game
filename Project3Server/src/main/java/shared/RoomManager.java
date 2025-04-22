@@ -11,9 +11,9 @@ public class RoomManager {
                 .filter(Room::isOpenForPlayers)
                 .findFirst();
     }
-
+    private int nextRoomNumber = 1;
     public Room createRoom() {
-        String id = "room" + (activeRooms.size()+1);
+        String id = "room" + nextRoomNumber++;
         Room r = new Room(id, 2);
         activeRooms.add(r);
         return r;
