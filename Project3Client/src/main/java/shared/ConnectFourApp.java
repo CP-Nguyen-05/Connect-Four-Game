@@ -39,6 +39,7 @@ public class ConnectFourApp extends Application {
 
     private LoginController    loginCtrl;
     private RegisterController registerCtrl;
+    private ProfileController profileCtrl;
 
     private Scene roomScene, waitingScene, gameScene;
     private String currentRoomId;
@@ -57,6 +58,7 @@ public class ConnectFourApp extends Application {
 
         loginCtrl   = new LoginController(this);
         registerCtrl = new RegisterController(this);
+        profileCtrl = new ProfileController(this);
 
         showLoginScene();
         stage.show();
@@ -91,7 +93,7 @@ public class ConnectFourApp extends Application {
         primaryStage.setScene(registerCtrl.getScene());
     }
 
-    private void showOptionMenuScene() {
+    public void showOptionMenuScene() {
         Button lanBtn      = new Button("LAN Play");
         Button compBtn     = new Button("Computer");
         Button howToPlayBtn= new Button("How To Play");
@@ -373,33 +375,10 @@ public class ConnectFourApp extends Application {
         primaryStage.setScene(new Scene(root, 400, 400));
     }
     private void showProfileScene() {
-        // Build labels from currentUser
-        Label nameLbl  = new Label("Display Name:   " + currentUser.getDisplayName());
-        Label userLbl  = new Label("Username:       " + currentUser.getUsername());
-        Label scoreLbl = new Label("Score:          " + currentUser.getScore());
-        Label playedLbl= new Label("Games Played:   " + currentUser.getGamesPlayed());
-        Label winLbl   = new Label("Wins:           " + currentUser.getWinCount());
-        Label lossLbl  = new Label("Losses:         " + currentUser.getLossCount());
-        Label drawLbl  = new Label("Draws:          " + currentUser.getDrawCount());
-
-        // Home button
-        Button homeBtn = new Button("Home");
-        homeBtn.setOnAction(e -> showOptionMenuScene());
-
-        // Delete account button
-        Button delBtn = new Button("Delete Account");
-        delBtn.setOnAction(e -> showDeleteAccountConfirm());
-
-        VBox root = new VBox(10,
-                nameLbl, userLbl,
-                scoreLbl, playedLbl,
-                winLbl, lossLbl, drawLbl,
-                new HBox(10, homeBtn, delBtn)
-        );
-        root.setPadding(new Insets(20));
-        primaryStage.setScene(new Scene(root, 350, 300));
+        profileCtrl.displayProfileInfo(currentUser);
+        primaryStage.setScene(profileCtrl.getScene());
     }
-    private void showDeleteAccountConfirm() {
+    public void showDeleteAccountConfirm() {
         Label confirm = new Label("Are you sure you want to delete\nyour account?");
         confirm.setWrapText(true);
 
