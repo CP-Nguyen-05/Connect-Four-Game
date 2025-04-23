@@ -58,14 +58,14 @@ public class RegisterController {
     }
 
     private void doRegister() {
-        String u = usernameField.getText().trim();
-        String p = passwordField.getText();
-        String c = confirmField.getText();
-        if (u.isEmpty() || p.isEmpty() || c.isEmpty()) {
+        String userName = usernameField.getText().trim();
+        String password = passwordField.getText();
+        String confirm = confirmField.getText();
+        if (userName.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
             messageLabel.setText("All fields are required");
             return;
         }
-        if (!p.equals(c)) {
+        if (!password.equals(confirm)) {
             messageLabel.setText("Passwords don’t match");
             return;
         }
@@ -76,17 +76,20 @@ public class RegisterController {
             Message m = new Message(
                     UUID.randomUUID().toString(),
                     MessageType.REGISTER,
-                    p,    // password
-                    u,    // username
+                    password,    // password
+                    userName,    // username
                     null,
                     System.currentTimeMillis()
             );
             conn.sendMessage(m);
 
             Message reply = conn.receiveMessage();
-            if (reply.getType() == MessageType.CHAT) {
+            if (reply.getType() == MessageType.REGISTER_SUCCESS) {
                 messageLabel.setText("Registration succeeded. Please log in.");
-                app.showLoginScene();
+                usernameField.clear();
+                passwordField.clear();
+                confirmField.clear();
+                //app.showLoginScene();
             } else {
                 messageLabel.setText(reply.getContent());
             }

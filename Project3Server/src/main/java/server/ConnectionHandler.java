@@ -78,7 +78,7 @@ public class ConnectionHandler implements Runnable {
                         if (created) {
                             sendMessage(new Message(
                                     UUID.randomUUID().toString(),
-                                    MessageType.CHAT,
+                                    MessageType.REGISTER_SUCCESS,
                                     "Registration successful – you may now log in.",
                                     "SERVER",
                                     msg.getSender(),

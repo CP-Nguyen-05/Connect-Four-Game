@@ -85,6 +85,24 @@ public class ConnectFourApp extends Application {
         );
         showOptionMenuScene();
     }
+    public void logout() {
+        // 1) Close the socket, if open
+        try {
+            if (conn != null) {
+                conn.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        conn = null;
+
+        // 2) Clear any user state
+        currentUser = null;
+        currentRoomId = null;
+
+        // 3) Go back to login screen
+        showLoginScene();
+    }
 
 
     public void showLoginScene() {
@@ -100,15 +118,24 @@ public class ConnectFourApp extends Application {
         Button compBtn     = new Button("Computer");
         Button howToPlayBtn= new Button("How To Play");
         Button profileBtn  = new Button("Profile");
+        Button logoutBtn   = new Button("Logout");
 
         lanBtn.setOnAction(e -> showRoomScene());
         // compBtn.setOnAction(e -> startSinglePlayer());
         howToPlayBtn.setOnAction(e -> showHowToPlayScene());
         profileBtn.setOnAction(e -> showProfileScene());
+        logoutBtn.setOnAction(e -> logout());
 
-        VBox root = new VBox(15, lanBtn, compBtn, howToPlayBtn, profileBtn);
+        HBox row1 = new HBox(10, lanBtn, compBtn, howToPlayBtn);
+        HBox row2 = new HBox(10, profileBtn, logoutBtn);    // ← group profile+logout
+
+        row1.setAlignment(Pos.CENTER);
+        row2.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(20, row1, row2);
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(50));
+
         primaryStage.setScene(new Scene(root, 400, 300));
     }
 

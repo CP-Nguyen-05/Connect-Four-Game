@@ -3,6 +3,7 @@ public enum MessageType {
     LOGIN,       // client → server: authenticate
     LOGIN_SUCCESS,
     REGISTER,    // client → server: create account
+    REGISTER_SUCCESS,
     DELETE_ACCOUNT,
     DELETE_ACCOUNT_SUCCESS,
     CREATE_ROOM, // client → server: create a new game room
