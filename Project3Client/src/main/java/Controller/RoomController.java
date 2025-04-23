@@ -251,7 +251,6 @@ public class RoomController {
             System.out.println("Host room");
         }
         else{
-            System.out.println("This is not Host room");
             app.setMyTurn(false);
         }
 

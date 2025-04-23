@@ -6,41 +6,42 @@ import shared.User;
 import java.util.UUID;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 
 public class GameSession implements Runnable {
-    private final ConnectionHandler p1;
-    private final ConnectionHandler p2;
-    // 0 = empty, 1 = p1’s disc, 2 = p2’s disc
+    private final ConnectionHandler p1, p2;
+    private ConnectionHandler current, other;
     private final int[][] board = new int[6][7];
-    private ConnectionHandler current;
-    private ConnectionHandler other;
+    private final BlockingQueue<Message> inbox = new LinkedBlockingQueue<>();
     private final UserDataStore ds = new UserDataStore();
+    private final Server server;
 
-    public GameSession(ConnectionHandler p1, ConnectionHandler p2) {
-        this.p1      = p1;
-        this.p2      = p2;
-        this.current = p1;
-        this.other   = p2;
+    public GameSession(ConnectionHandler p1, ConnectionHandler p2, Server server) {
+        this.p1 = p1; this.p2 = p2; this.current = p1; this.other = p2;
+        this.server = server;
+    }
+
+    public void handleMessage(Message m) {
+        inbox.offer(m);
     }
 
     @Override
     public void run() {
         try {
             while (true) {
-                Message msg = current.readMessage();
-                MessageType type = msg.getType();
+                Message msg = inbox.take();   // BLOCK until a message arrives
 
+                MessageType type = msg.getType();
                 if (type == MessageType.MOVE) {
-                    System.out.println("MOve go in GameSession");
                     int col = Integer.parseInt(msg.getContent());
-                    int playerId = (current == p1 ? 1 : 2);
-                    int row = dropDisc(col, playerId);
+                    int pid = (current == p1 ? 1 : 2);
+                    int row = dropDisc(col, pid);
                     if (row < 0) {
-                        // invalid move (column full)
                         current.sendMessage(error("Column is full!"));
                         continue;
                     }
-
                     // broadcast the move "col,row"
                     String payload = col + "," + row;
                     relay(new Message(
@@ -51,38 +52,33 @@ public class GameSession implements Runnable {
                             null,
                             System.currentTimeMillis()
                     ));
-
-                    // check for win
-                    if (checkWin(row, col, playerId)) {
+                    if (checkWin(row, col, pid)) {
                         endGame(current, other);
                         return;
                     }
-
-                    // check for draw
                     if (isDraw()) {
                         endDraw();
                         return;
                     }
-
-                    // swap turns
                     swapPlayers();
 
                 } else if (type == MessageType.CHAT) {
-                    // in-game chat
+                    // in-game chat: echo to both
                     relay(msg);
 
                 } else if (type == MessageType.SURRENDER) {
-                    // someone surrendered
                     endSurrender(current, other);
+                    server.getRoomManager().removeRoom(current.getCurrentRoomId());
+                    server.removeGameSession(current.getCurrentRoomId());
                     return;
                 }
-                // ignore any other message types
             }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (InterruptedException e) {
+            // session was cancelled
         }
-        // no cleanup here; your ConnectionHandler finally block can remove the room
+        // Optionally notify ConnectionHandler to clean up room
     }
+
 
     private int dropDisc(int col, int playerId) {
         for (int row = 5; row >= 0; row--) {
