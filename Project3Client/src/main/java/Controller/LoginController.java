@@ -1,4 +1,7 @@
-package shared;
+package Controller;
+import javafx.geometry.Pos;
+import shared.ClientConnection;
+import shared.ConnectFourApp;
 import shared.Message;
 import shared.MessageType;
 import javafx.geometry.Insets;
@@ -21,31 +24,58 @@ public class LoginController {
     }
 
     private void buildScene() {
+        // Title label styled like original
+        Label title = new Label("Login");
+        title.setStyle("-fx-font-family: W95FA;");
+        title.setStyle("-fx-font-size: 36");
+        HBox titleBox = new HBox(title);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+
+        // Input fields
         usernameField = new TextField();
+        usernameField.setPromptText("Username");
+
         passwordField = new PasswordField();
-        messageLabel  = new Label();
-        messageLabel.setStyle("-fx-text-fill: red;");
+        passwordField.setPromptText("Password");
 
+        // Buttons
         Button loginBtn = new Button("Login");
-        Button regBtn   = new Button("Register");
+        loginBtn.setMaxWidth(Double.MAX_VALUE);
 
+        Button regBtn = new Button("Need an account? Sign up");
+        regBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #26268C; -fx-underline: true; -fx-cursor: hand;");
+
+        // Message label
+        messageLabel = new Label();
+        HBox messageBox = new HBox(messageLabel);
+        messageBox.setAlignment(Pos.CENTER_LEFT);
+
+        // Button actions
         loginBtn.setOnAction(e -> doLogin());
-        regBtn  .setOnAction(e -> app.showRegisterScene());
+        regBtn.setOnAction(e -> app.showRegisterScene());
 
-        HBox buttons = new HBox(10, loginBtn, regBtn);
-        buttons.setPadding(new Insets(10));
-        buttons.setAlignment(javafx.geometry.Pos.CENTER);
-
-        VBox root = new VBox(10,
-                new Label("Username:"), usernameField,
-                new Label("Password:"), passwordField,
-                buttons,
-                messageLabel
+        // Form layout
+        VBox form = new VBox(10,
+                titleBox,
+                messageBox,
+                usernameField,
+                passwordField,
+                loginBtn,
+                regBtn
         );
-        root.setPadding(new Insets(20));
-        root.setAlignment(javafx.geometry.Pos.CENTER);
+        form.setAlignment(Pos.CENTER);
+        form.setMaxWidth(300);
+        form.setMaxHeight(100);
+        form.setPadding(new Insets(20));
+        form.setStyle("-fx-background-color: #C0C0C0; -fx-border-color: #FFF; -fx-border-radius: 10; -fx-background-radius: 10;");
 
-        scene = new Scene(root, 320, 240);
+        // Root layout
+        StackPane root = new StackPane(form);
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #008081;");
+
+        // Set scene
+        scene = new Scene(root, 1600, 900);
     }
 
     public Scene getScene() {

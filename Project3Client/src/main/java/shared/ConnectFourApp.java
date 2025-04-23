@@ -1,5 +1,6 @@
 package shared;
 
+import Controller.LoginController;
 import Controller.RoomView;
 import Controller.RoomController;
 
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.ArrayList;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -36,10 +38,13 @@ public class ConnectFourApp extends Application {
     private User currentUser;
     private Client client;  // or ClientConnection + Client wrapper
     private ClientConnection conn;
+    public static final String FONT_PATH = "src/main/resources/font/W95FA.otf";
+    public static final double DEFAULT_FONT_SIZE = 18;
+    public static Font globalFont;
 
-    private LoginController    loginCtrl;
-    private RegisterController registerCtrl;
-    private ProfileController profileCtrl;
+    private LoginController loginCtrl;
+    private shared.RegisterController registerCtrl;
+    private shared.ProfileController profileCtrl;
 
     private Scene roomScene, waitingScene, gameScene;
     private String currentRoomId;
@@ -53,14 +58,26 @@ public class ConnectFourApp extends Application {
         this.currentRoomId = id;
     }
 
+    private void loadCustomFont() {
+        globalFont = Font.loadFont(
+                getClass().getResourceAsStream(FONT_PATH), DEFAULT_FONT_SIZE
+        );
+        if (globalFont != null) {
+            System.out.println("Custom font loaded: " + globalFont.getName());
+        } else {
+            System.out.println("❌ Failed to load custom font");
+        }
+    }
+
     @Override
     public void start(Stage stage) {
+        loadCustomFont();
         this.primaryStage = stage;
         stage.setTitle("Connect Four");
 
         loginCtrl   = new LoginController(this);
-        registerCtrl = new RegisterController(this);
-        profileCtrl = new ProfileController(this);
+        registerCtrl = new shared.RegisterController(this);
+        profileCtrl = new shared.ProfileController(this);
 
         showLoginScene();
         stage.show();
