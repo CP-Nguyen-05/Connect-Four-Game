@@ -4,11 +4,11 @@ import Controller.LoginController;
 import Controller.RoomView;
 import Controller.RoomController;
 
+import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
 
-import javafx.animation.FadeTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.layout.StackPane;
@@ -33,7 +33,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.util.Duration;
 
 import java.io.IOException;
 
@@ -54,13 +53,14 @@ public class ConnectFourApp extends Application {
     private shared.RegisterController registerCtrl;
     private shared.ProfileController profileCtrl;
 
-    private Scene roomScene, waitingScene, gameScene;
+    private Scene roomScene;
+    private Scene waitingScene;
     private String currentRoomId;
     private TextField roomIdField;
     private Label messageLabel;   // ← pull this out
     private TextArea chatArea;
     private RoomController roomCtrl;
-    private List<RoomView> availableRooms = new ArrayList<>();
+    private final List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
 
     public void setCurrentRoomId(String id) {
@@ -76,8 +76,6 @@ public class ConnectFourApp extends Application {
             System.out.println("Failed to load custom font");
         }
     }
-
-
 
     @Override
     public void start(Stage stage) {
@@ -127,7 +125,7 @@ public class ConnectFourApp extends Application {
         currentUser = null;
         currentRoomId = null;
 
-        // 3) Go back to the log in screen
+        // 3) Go back to the login screen
         showLoginScene();
     }
 
@@ -137,7 +135,7 @@ public class ConnectFourApp extends Application {
     }
 
     public void applyGlobalStyles(Scene scene) {
-        scene.getStylesheets().add(getClass().getResource("/styles/global.css").toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles/global.css")).toExternalForm());
     }
 
     public void showRegisterScene() {
@@ -145,19 +143,30 @@ public class ConnectFourApp extends Application {
     }
 
     public void showOptionMenuScene() {
-        Button lanBtn      = new Button("LAN Play");
-        Button compBtn     = new Button("Computer");
-        Button howToPlayBtn= new Button("How To Play");
-        Button profileBtn  = new Button("Profile");
-        Button logoutBtn   = new Button("Logout");
+        Label title = new Label("Connect Four");
+        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 80));  // Big title
+        title.setStyle(
+                "-fx-text-fill: white;" +
+                "-fx-background-color: transparent;" +
+                "-fx-padding: 0 0 0 0;" +
+                "-fx-text-alignment: center;"
+        );
+        title.setAlignment(Pos.CENTER);
+        title.setMaxWidth(Double.MAX_VALUE);
 
-        lanBtn.setOnAction(e -> showRoomScene());
+        Button lanButton = new Button("LAN Play");
+        Button compButton = new Button("Computer");
+        Button howToPlayButton = new Button("How To Play");
+        Button profileButton = new Button("Profile");
+        Button logoutButton = new Button("Logout");
+
+        lanButton.setOnAction(e -> showRoomScene());
         // compBtn.setOnAction(e -> startSinglePlayer());
-        howToPlayBtn.setOnAction(e -> showHowToPlayScene());
-        profileBtn.setOnAction(e -> showProfileScene());
-        logoutBtn.setOnAction(e -> logout());
+        howToPlayButton.setOnAction(e -> showHowToPlayScene());
+        profileButton.setOnAction(e -> showProfileScene());
+        logoutButton.setOnAction(e -> logout());
 
-        VBox root = new VBox(10, lanBtn, compBtn, howToPlayBtn, profileBtn, logoutBtn);
+        VBox root = new VBox(30, lanButton, compButton, howToPlayButton, profileButton, logoutButton);
         root.setStyle(
                 "-fx-background-color: #C0C0C0;" +         // VBox background
                         "-fx-border-color: #FFFFFF;" +            // Border color
@@ -168,10 +177,16 @@ public class ConnectFourApp extends Application {
         // VBox background
         root.setAlignment(Pos.CENTER);
         root.setMaxWidth(250);
-        root.setMaxHeight(250);
+        root.setMaxHeight(300);
+        root.setPrefHeight(300);
+        root.setMinHeight(300);
 
-        StackPane background = new StackPane(root);
-        background.setStyle("-fx-background-color: #008081;");  // Scene background
+        VBox layout = new VBox(50, title, root);  // 50 px space between title and menu
+        layout.setAlignment(Pos.CENTER);
+        VBox.setMargin(title, new Insets(0, 0, 0, 0));
+
+        StackPane background = new StackPane(layout);
+        background.setStyle("-fx-background-color: #008081;");
 
         Scene scene = new Scene(background, 1600, 900);
         primaryStage.setScene(scene);
@@ -199,7 +214,7 @@ public class ConnectFourApp extends Application {
             Button spectateBtn   = new Button("Spectate");
             Button backBtn       = new Button("Back");
 
-            // 3) Instantiate controller with the plain list + text area
+            // 3) Instantiate controller with the plain list and text area
             roomCtrl = new RoomController(
                     conn,
                     currentUser,
@@ -359,7 +374,7 @@ public class ConnectFourApp extends Application {
         // ——— Combine board + chat in one scene ———
         HBox root = new HBox(20, board, chatPane);
         root.setPadding(new Insets(10));
-        gameScene = new Scene(root, 1600, 900);
+        Scene gameScene = new Scene(root, 1600, 900);
 
         primaryStage.setScene(gameScene);
 
@@ -443,34 +458,38 @@ public class ConnectFourApp extends Application {
 
     private void showHowToPlayScene() {
         TextField title = new TextField("How to play");
+        title.setMouseTransparent(true);
+        title.setFocusTraversable(false);
         title.setEditable(false);  // Make it read-only
         title.setFont(Font.font(ConnectFourApp.globalFontFamily, 64));
+        title.setStyle("-fx-text-fill: white; -fx-background-color: #03BF9A;");
         title.setMinWidth(1000);
         title.setMaxWidth(300);
         title.setAlignment(Pos.CENTER); // Center text horizontally
-
-        title.setStyle("-fx-background-color: #C0C0C0;");
 
         HBox titleRow = new HBox(title);
         titleRow.setAlignment(Pos.CENTER);
 
         TextArea howTo = new TextArea(
-                        "– Two players take turns dropping discs into columns.\n\n" +
-                        "– Discs fall to the lowest available space in the selected column.\n\n" +
-                        "– The goal is to connect four of your discs in a row:\n\n" +
-                        "        – Horizontally\n\n" +
+                        "- Two players take turns dropping discs into columns.\n\n" +
+                        "- Discs fall to the lowest available space in the selected column.\n\n" +
+                        "- The goal is to connect four of your discs in a row:\n\n" +
+                        "        - Horizontally\n\n" +
                         "        – Vertically\n\n" +
                         "        – Diagonally\n\n" +
                         "– The first player to connect four wins the game.\n\n" +
                         "– If the board is full and no one wins, it’s a draw."
         );
+        howTo.setEditable(false);
+        howTo.setMouseTransparent(true);
+        howTo.setFocusTraversable(false);
         howTo.setFont(Font.font(globalFontFamily, 36));
         howTo.setPrefWidth(1000);
         howTo.setMaxWidth(1000);
         howTo.setPrefHeight(650);
         howTo.setMaxHeight(650);
         howTo.setEditable(false);
-        howTo.setStyle("-fx-control-inner-background: #C0C0C0;");
+        howTo.setStyle("-fx-control-inner-background: #03BF9A; -fx-text-fill: #FFF; ");
 
         VBox container = new VBox(howTo);
         container.setAlignment(Pos.CENTER);
@@ -478,6 +497,7 @@ public class ConnectFourApp extends Application {
 
 
         Button back = new Button("Back");
+        back.setStyle("-fx-background-color: #1D90FF; -fx-text-fill: white; -fx-border-color: white; -fx-font-size: 24px");
         back.setPrefWidth(200);
         back.setPrefHeight(50);
         back.setOnAction(e -> showOptionMenuScene());
@@ -497,67 +517,75 @@ public class ConnectFourApp extends Application {
     }
     public void showDeleteAccountConfirm() {
         Label confirm = new Label("Are you sure you want to delete\nyour account?");
+        confirm.setStyle("-fx-font-size: 48px; -fx-text-fill: white;");
         confirm.setWrapText(true);
 
         Button yes = new Button("Yes");
+        yes.setStyle("-fx-font-size: 24px; -fx-text-fill: white;");
         Button no = new Button("No");
+        no.setStyle("-fx-font-size: 24px; -fx-text-fill: white;");
 
         yes.setOnAction(e -> {
             yes.setDisable(true);
             no.setDisable(true);
             confirm.setText("Deleting account...");
 
-            new Thread(() -> {
-                try {
-                    Message del = new Message(
-                            UUID.randomUUID().toString(),
-                            MessageType.DELETE_ACCOUNT,
-                            currentUser.getPassword(),
-                            currentUser.getUsername(),
-                            null,
-                            System.currentTimeMillis()
-                    );
-                    System.out.println("Sending DELETE_ACCOUNT message for user: " + currentUser.getUsername());
-                    conn.sendMessage(del);
-
-                    Message reply = conn.receiveMessage();
-                    System.out.println("Received response: " + reply.getType() + " - " + reply.getContent());
-
-                    Platform.runLater(() -> {
-                        if (reply.getType() == MessageType.ERROR) {
-                            new Alert(AlertType.ERROR, reply.getContent()).showAndWait();
-                            showProfileScene();
-                        } else if (reply.getType() == MessageType.DELETE_ACCOUNT_SUCCESS ) {
-                            try {
-                                conn.close();
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                            conn = null;
-                            currentUser = null;
-                            showLoginScene();
-                        } else {
-                            new Alert(AlertType.ERROR, "Unexpected server response.").showAndWait();
-                            showProfileScene();
-                        }
-                    });
-                } catch (SocketTimeoutException ex) {
-                } catch (Exception ex) {
-                }
-            }, "DeleteAccount-Thread").start();
+            new Thread(this::run, "DeleteAccount-Thread").start();
         });
 
         no.setOnAction(e -> showProfileScene());
 
-        HBox buttons = new HBox(10, yes, no);
-        VBox root = new VBox(10, confirm, buttons);
+        HBox buttons = new HBox(50, yes, no);
+        buttons.setAlignment(Pos.CENTER);
+        VBox root = new VBox(20, confirm, buttons);
+
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #008081;");
 
         primaryStage.setScene(new Scene(root, 1600, 900));
     }
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private void run() {
+        try {
+            Message del = new Message(
+                    UUID.randomUUID().toString(),
+                    MessageType.DELETE_ACCOUNT,
+                    currentUser.getPassword(),
+                    currentUser.getUsername(),
+                    null,
+                    System.currentTimeMillis()
+            );
+            System.out.println("Sending DELETE_ACCOUNT message for user: " + currentUser.getUsername());
+            conn.sendMessage(del);
+
+            Message reply = conn.receiveMessage();
+            System.out.println("Received response: " + reply.getType() + " - " + reply.getContent());
+
+            Platform.runLater(() -> {
+                if (reply.getType() == MessageType.ERROR) {
+                    new Alert(AlertType.ERROR, reply.getContent()).showAndWait();
+                    showProfileScene();
+                } else if (reply.getType() == MessageType.DELETE_ACCOUNT_SUCCESS) {
+                    try {
+                        conn.close();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    conn = null;
+                    currentUser = null;
+                    showLoginScene();
+                } else {
+                    new Alert(AlertType.ERROR, "Unexpected server response.").showAndWait();
+                    showProfileScene();
+                }
+            });
+        } catch (Exception ex) {
+
+        }
     }
 }
