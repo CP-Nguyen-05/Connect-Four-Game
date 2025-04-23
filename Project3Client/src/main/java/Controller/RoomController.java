@@ -21,6 +21,9 @@ public class RoomController {
     private final User currentUser;
     private final ConnectFourApp app;
 
+    private Thread createThread;
+    private String lastCreatedRoomId;
+
     private final List<RoomView> rooms;       // plain List
     private final TextArea roomListArea;      // where we show them
     private final TextField roomIdField;
@@ -108,18 +111,31 @@ public class RoomController {
             roomIdField.setDisable(true);
         });
 
-        new Thread(() -> {
+        createThread = new Thread(() -> {
             try {
+                // 1) ask server to make a room
                 conn.sendMessage(new Message(
                         UUID.randomUUID().toString(),
                         MessageType.CREATE_ROOM,
-                        "",
+                        "",                           // no content
                         currentUser.getUsername(),
                         null,
                         System.currentTimeMillis()
                 ));
+
+                // 2) server will respond ROOM_CREATED
+                Message created = conn.receiveMessage();
+                if (created.getType() == MessageType.ROOM_CREATED) {
+                    lastCreatedRoomId = created.getContent();
+
+                }
+
+                // 3) switch UI
                 Platform.runLater(app::showWaitingScene);
+
+                // 4) now block until GAME_START
                 waitForGameStart();
+
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Platform.runLater(() -> {
@@ -127,7 +143,34 @@ public class RoomController {
                     app.showRoomScene();
                 });
             }
-        }, "CreateRoom-Thread").start();
+        }, "CreateRoom-Thread");
+
+        createThread.start();
+    }
+
+    public void cancelCreateRoom() {
+        // 1) kill the background thread (it’ll likely block in receiveMessage, so we just drop it)
+        if (createThread != null) {
+            createThread.interrupt();
+            createThread = null;
+        }
+
+        // 2) tell server to remove that room
+        if (lastCreatedRoomId != null) {
+            try {
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.CANCEL_ROOM,
+                        lastCreatedRoomId,
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+            } catch (Exception ignored) {}
+        }
+        lastCreatedRoomId = null;
+        // 3) go back to the lobby
+        app.showRoomScene();
     }
 
     /** Quick‑join: pick the first open room, or prompt to create one. */
@@ -247,6 +290,9 @@ public class RoomController {
         Message m;
         do {
             m = conn.receiveMessage();
+            if (m.getType() == MessageType.ROOM_CANCELLED) {
+                return;
+            }
         } while (m.getType() != MessageType.GAME_START);
 
         String roomId = m.getContent();

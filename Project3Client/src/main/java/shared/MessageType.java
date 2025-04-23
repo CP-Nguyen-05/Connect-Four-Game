@@ -7,6 +7,8 @@ public enum MessageType {
     DELETE_ACCOUNT_SUCCESS,
     CREATE_ROOM, // client → server: create a new game room
     ROOM_CREATED,
+    CANCEL_ROOM,
+    ROOM_CANCELLED,
     JOIN_ROOM,   // client → server: join a specific room
     QUICK_JOIN,  // client → server: join any open room
     LIST_ROOMS,      // client → server: “send me all open rooms”

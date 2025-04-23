@@ -328,6 +328,22 @@ public class ConnectionHandler implements Runnable {
                                 System.currentTimeMillis()
                         ));
                         break;
+                    case CANCEL_ROOM:
+                        String rid = msg.getContent();
+                        username = msg.getSender();
+                        server.getRoomManager().findRoomById(rid).ifPresent(room -> {
+                            server.getRoomManager().removeRoom(rid);
+                            System.out.println(username + "has been cancelled "+rid);
+                        });
+                        sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.ROOM_CANCELLED,
+                                rid,
+                                "SERVER",
+                                username,
+                                System.currentTimeMillis()
+                        ));
+                        break;
                     case SURRENDER:
                         String loser = msg.getSender();
                         roomId = msg.getContent();      // client sent the roomId
@@ -373,7 +389,8 @@ public class ConnectionHandler implements Runnable {
                                 ds.saveUsers(all);
 
                                 server.getRoomManager().removeRoom(roomId);
-                                System.out.println(loser + " surrendered in " + roomId + " → room removed");
+                                System.out.println(loser + " surrendered in " + roomId);
+                                System.out.println(winnerUser.getUsername() + " won in "+ roomId);
                             }
                         });
                         break;

@@ -186,15 +186,17 @@ public class ConnectFourApp extends Application {
             Label lbl = new Label("Waiting for an opponent to join…");
             lbl.setWrapText(true);
             ProgressIndicator spinner = new ProgressIndicator();
-            VBox root = new VBox(20, spinner, lbl);
+
+            Button cancel = new Button("Cancel");
+            cancel.setOnAction(e -> roomCtrl.cancelCreateRoom());
+
+            VBox root = new VBox(20, spinner, lbl, cancel);
             root.setAlignment(Pos.CENTER);
             root.setPadding(new Insets(30));
-            waitingScene = new Scene(root, 400, 200);
+            waitingScene = new Scene(root, 400, 220);
         }
         primaryStage.setScene(waitingScene);
     }
-
-
 
 
 
