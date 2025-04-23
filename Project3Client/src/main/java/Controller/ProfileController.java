@@ -49,7 +49,8 @@ public class ProfileController {
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER_LEFT);
 
-        scene = new Scene(root, 350, 300);
+        scene = new Scene(root, 1600, 900);
+        app.applyGlobalStyles(scene);
     }
 
     /** Call this right before showing the profile scene. */

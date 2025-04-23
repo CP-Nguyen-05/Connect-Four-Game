@@ -1,5 +1,6 @@
 package Controller;
 import javafx.geometry.Pos;
+import javafx.scene.text.Font;
 import shared.ClientConnection;
 import shared.ConnectFourApp;
 import shared.Message;
@@ -26,8 +27,8 @@ public class LoginController {
     private void buildScene() {
         // Title label styled like original
         Label title = new Label("Login");
-        title.setStyle("-fx-font-family: W95FA;");
-        title.setStyle("-fx-font-size: 36");
+        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 36));
+
         HBox titleBox = new HBox(title);
         titleBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -64,8 +65,8 @@ public class LoginController {
                 regBtn
         );
         form.setAlignment(Pos.CENTER);
-        form.setMaxWidth(300);
-        form.setMaxHeight(100);
+        form.setMaxWidth(500);
+        form.setMaxHeight(200);
         form.setPadding(new Insets(20));
         form.setStyle("-fx-background-color: #C0C0C0; -fx-border-color: #FFF; -fx-border-radius: 10; -fx-background-radius: 10;");
 
@@ -76,6 +77,8 @@ public class LoginController {
 
         // Set scene
         scene = new Scene(root, 1600, 900);
+        app.applyGlobalStyles(scene);
+
     }
 
     public Scene getScene() {
@@ -113,7 +116,7 @@ public class LoginController {
                 messageLabel.setText(reply.getContent());
             }
         } catch (Exception ex) {
-            messageLabel.setText("Server error: " + ex.getMessage());
+            messageLabel.setText("Server error. " + ex.getMessage());
         }
     }
 }

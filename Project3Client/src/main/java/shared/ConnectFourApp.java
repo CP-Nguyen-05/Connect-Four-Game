@@ -7,14 +7,16 @@ import Controller.RoomController;
 import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
+
+import javafx.animation.FadeTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
@@ -31,6 +33,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.util.Duration;
+
 import java.io.IOException;
 
 public class ConnectFourApp extends Application {
@@ -38,10 +42,14 @@ public class ConnectFourApp extends Application {
     private User currentUser;
     private Client client;  // or ClientConnection + Client wrapper
     private ClientConnection conn;
-    public static final String FONT_PATH = "src/main/resources/font/W95FA.otf";
+
+    // Font
+    public static final String FONT_PATH = "/fonts/W95FA.otf";
     public static final double DEFAULT_FONT_SIZE = 18;
     public static Font globalFont;
+    public static String globalFontFamily = "W95FA";
 
+    // Controllers
     private LoginController loginCtrl;
     private shared.RegisterController registerCtrl;
     private shared.ProfileController profileCtrl;
@@ -54,20 +62,22 @@ public class ConnectFourApp extends Application {
     private RoomController roomCtrl;
     private List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
+
     public void setCurrentRoomId(String id) {
         this.currentRoomId = id;
     }
 
     private void loadCustomFont() {
-        globalFont = Font.loadFont(
-                getClass().getResourceAsStream(FONT_PATH), DEFAULT_FONT_SIZE
-        );
+        globalFont = Font.loadFont(getClass().getResourceAsStream(FONT_PATH), DEFAULT_FONT_SIZE);
         if (globalFont != null) {
-            System.out.println("Custom font loaded: " + globalFont.getName());
+            globalFontFamily = globalFont.getFamily();
+            System.out.println("Loaded font: " + globalFont.getName());
         } else {
-            System.out.println("❌ Failed to load custom font");
+            System.out.println("Failed to load custom font");
         }
     }
+
+
 
     @Override
     public void start(Stage stage) {
@@ -117,13 +127,17 @@ public class ConnectFourApp extends Application {
         currentUser = null;
         currentRoomId = null;
 
-        // 3) Go back to login screen
+        // 3) Go back to the log in screen
         showLoginScene();
     }
 
 
     public void showLoginScene() {
         primaryStage.setScene(loginCtrl.getScene());
+    }
+
+    public void applyGlobalStyles(Scene scene) {
+        scene.getStylesheets().add(getClass().getResource("/styles/global.css").toExternalForm());
     }
 
     public void showRegisterScene() {
@@ -143,17 +157,25 @@ public class ConnectFourApp extends Application {
         profileBtn.setOnAction(e -> showProfileScene());
         logoutBtn.setOnAction(e -> logout());
 
-        HBox row1 = new HBox(10, lanBtn, compBtn, howToPlayBtn);
-        HBox row2 = new HBox(10, profileBtn, logoutBtn);    // ← group profile+logout
-
-        row1.setAlignment(Pos.CENTER);
-        row2.setAlignment(Pos.CENTER);
-
-        VBox root = new VBox(20, row1, row2);
+        VBox root = new VBox(10, lanBtn, compBtn, howToPlayBtn, profileBtn, logoutBtn);
+        root.setStyle(
+                "-fx-background-color: #C0C0C0;" +         // VBox background
+                        "-fx-border-color: #FFFFFF;" +            // Border color
+                        "-fx-border-width: 3;" +                  // Border thickness
+                        "-fx-border-radius: 20;" +                // Rounded border corners
+                        "-fx-background-radius: 20;"              // Rounded background to match
+        );
+        // VBox background
         root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(50));
+        root.setMaxWidth(250);
+        root.setMaxHeight(250);
 
-        primaryStage.setScene(new Scene(root, 400, 300));
+        StackPane background = new StackPane(root);
+        background.setStyle("-fx-background-color: #008081;");  // Scene background
+
+        Scene scene = new Scene(background, 1600, 900);
+        primaryStage.setScene(scene);
+        applyGlobalStyles(scene);
     }
 
     public void showRoomScene() {
@@ -211,7 +233,7 @@ public class ConnectFourApp extends Application {
             root.setPadding(new Insets(20));
             root.setAlignment(Pos.CENTER);
 
-            roomScene = new Scene(root, 500, 450);
+            roomScene = new Scene(root, 1600, 900);
         }
         else {
             // ** re‑enable and clear them any time you come back **
@@ -237,7 +259,7 @@ public class ConnectFourApp extends Application {
             VBox root = new VBox(20, spinner, lbl, cancel);
             root.setAlignment(Pos.CENTER);
             root.setPadding(new Insets(30));
-            waitingScene = new Scene(root, 400, 220);
+            waitingScene = new Scene(root, 1600, 900);
         }
         primaryStage.setScene(waitingScene);
     }
@@ -337,7 +359,7 @@ public class ConnectFourApp extends Application {
         // ——— Combine board + chat in one scene ———
         HBox root = new HBox(20, board, chatPane);
         root.setPadding(new Insets(10));
-        gameScene = new Scene(root, 700, 400);
+        gameScene = new Scene(root, 1600, 900);
 
         primaryStage.setScene(gameScene);
 
@@ -419,15 +441,55 @@ public class ConnectFourApp extends Application {
         }, "GameListener-Thread").start();
     }
 
-
     private void showHowToPlayScene() {
-        TextArea howTo = new TextArea("Rules:\n1. … \n2. …");
+        TextField title = new TextField("How to play");
+        title.setEditable(false);  // Make it read-only
+        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 64));
+        title.setMinWidth(1000);
+        title.setMaxWidth(300);
+        title.setAlignment(Pos.CENTER); // Center text horizontally
+
+        title.setStyle("-fx-background-color: #C0C0C0;");
+
+        HBox titleRow = new HBox(title);
+        titleRow.setAlignment(Pos.CENTER);
+
+        TextArea howTo = new TextArea(
+                        "– Two players take turns dropping discs into columns.\n\n" +
+                        "– Discs fall to the lowest available space in the selected column.\n\n" +
+                        "– The goal is to connect four of your discs in a row:\n\n" +
+                        "        – Horizontally\n\n" +
+                        "        – Vertically\n\n" +
+                        "        – Diagonally\n\n" +
+                        "– The first player to connect four wins the game.\n\n" +
+                        "– If the board is full and no one wins, it’s a draw."
+        );
+        howTo.setFont(Font.font(globalFontFamily, 36));
+        howTo.setPrefWidth(1000);
+        howTo.setMaxWidth(1000);
+        howTo.setPrefHeight(650);
+        howTo.setMaxHeight(650);
         howTo.setEditable(false);
+        howTo.setStyle("-fx-control-inner-background: #C0C0C0;");
+
+        VBox container = new VBox(howTo);
+        container.setAlignment(Pos.CENTER);
+        container.setPrefWidth(900);
+
+
         Button back = new Button("Back");
+        back.setPrefWidth(200);
+        back.setPrefHeight(50);
         back.setOnAction(e -> showOptionMenuScene());
-        VBox root = new VBox(10, howTo, back);
+
+        HBox buttonBox = new HBox(10, back);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(10, titleRow, container, buttonBox);
         root.setPadding(new Insets(20));
-        primaryStage.setScene(new Scene(root, 400, 400));
+        primaryStage.setScene(new Scene(root, 1600, 900));
+        root.setStyle("-fx-background-color: #008081;");
+        applyGlobalStyles(primaryStage.getScene());
     }
     private void showProfileScene() {
         profileCtrl.displayProfileInfo(currentUser);
@@ -492,7 +554,7 @@ public class ConnectFourApp extends Application {
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
 
-        primaryStage.setScene(new Scene(root, 300, 150));
+        primaryStage.setScene(new Scene(root, 1600, 900));
     }
 
     public static void main(String[] args) {

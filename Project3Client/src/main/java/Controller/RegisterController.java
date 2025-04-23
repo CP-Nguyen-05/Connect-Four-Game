@@ -7,16 +7,18 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+
 import java.util.UUID;
 
 public class RegisterController {
     private final ConnectFourApp app;
     private Scene scene;
 
-    private TextField    usernameField;
+    private TextField usernameField;
     private PasswordField passwordField;
     private PasswordField confirmField;
-    private Label         messageLabel;
+    private Label messageLabel;
 
     public RegisterController(ConnectFourApp app) {
         this.app = app;
@@ -24,33 +26,61 @@ public class RegisterController {
     }
 
     private void buildScene() {
-        usernameField = new TextField();
-        passwordField = new PasswordField();
-        confirmField  = new PasswordField();
-        messageLabel  = new Label();
-        messageLabel.setStyle("-fx-text-fill: red;");
+        // Title label
+        Label title = new Label("Register");
+        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 36));
+        HBox titleBox = new HBox(title);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
 
-        Button submitBtn = new Button("Submit");
-        Button backBtn   = new Button("Back");
+        // Input fields
+        usernameField = new TextField();
+        usernameField.setPromptText("Username");
+
+        passwordField = new PasswordField();
+        passwordField.setPromptText("Password");
+
+        confirmField = new PasswordField();
+        confirmField.setPromptText("Confirm Password");
+
+        // Message label
+        messageLabel = new Label();
+        HBox messageBox = new HBox(messageLabel);
+        messageBox.setAlignment(Pos.CENTER_LEFT);
+
+        // Buttons
+        Button submitBtn = new Button("Sign Up");
+        submitBtn.setMaxWidth(Double.MAX_VALUE);
+
+        Button backBtn = new Button("Already have an account? Log in");
+        backBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #26268C; -fx-underline: true; -fx-cursor: hand;");
 
         submitBtn.setOnAction(e -> doRegister());
-        backBtn  .setOnAction(e -> app.showLoginScene());
+        backBtn.setOnAction(e -> app.showLoginScene());
 
-        HBox buttons = new HBox(10, submitBtn, backBtn);
-        buttons.setPadding(new Insets(10));
-        buttons.setAlignment(Pos.CENTER);
-
-        VBox root = new VBox(10,
-                new Label("Username:"), usernameField,
-                new Label("Password:"), passwordField,
-                new Label("Confirm Password:"), confirmField,
-                buttons,
-                messageLabel
+        // Form layout
+        VBox form = new VBox(10,
+                titleBox,
+                messageBox,
+                usernameField,
+                passwordField,
+                confirmField,
+                submitBtn,
+                backBtn
         );
-        root.setPadding(new Insets(20));
-        root.setAlignment(Pos.CENTER);
+        form.setAlignment(Pos.CENTER);
+        form.setMaxWidth(500);
+        form.setMaxHeight(200);
+        form.setPadding(new Insets(20));
+        form.setStyle("-fx-background-color: #C0C0C0; -fx-border-color: #FFF; -fx-border-radius: 10; -fx-background-radius: 10;");
 
-        scene = new Scene(root, 350, 300);
+        // Root layout
+        StackPane root = new StackPane(form);
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #008081;");
+
+        // Scene
+        scene = new Scene(root, 1600, 900);
+        app.applyGlobalStyles(scene);  // ✅ Apply global font style
     }
 
     public Scene getScene() {
@@ -61,23 +91,24 @@ public class RegisterController {
         String userName = usernameField.getText().trim();
         String password = passwordField.getText();
         String confirm = confirmField.getText();
+
         if (userName.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
             messageLabel.setText("All fields are required");
             return;
         }
+
         if (!password.equals(confirm)) {
-            messageLabel.setText("Passwords don’t match");
+            messageLabel.setText("Please make sure your passwords match");
             return;
         }
 
         try {
             ClientConnection conn = app.getOrCreateConnection();
-            // content = password, sender = username
             Message m = new Message(
                     UUID.randomUUID().toString(),
                     MessageType.REGISTER,
-                    password,    // password
-                    userName,    // username
+                    password,
+                    userName,
                     null,
                     System.currentTimeMillis()
             );
@@ -89,7 +120,6 @@ public class RegisterController {
                 usernameField.clear();
                 passwordField.clear();
                 confirmField.clear();
-                //app.showLoginScene();
             } else {
                 messageLabel.setText(reply.getContent());
             }
