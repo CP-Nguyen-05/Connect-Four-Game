@@ -53,6 +53,11 @@ public class ConnectFourApp extends Application {
         this.currentRoomId = id;
     }
 
+    private boolean myTurn;
+    public void setMyTurn(boolean isMyTurn) {
+        this.myTurn = isMyTurn;
+    }
+
     @Override
     public void start(Stage stage) {
         this.primaryStage = stage;
@@ -229,7 +234,7 @@ public class ConnectFourApp extends Application {
 
 
     public void showGameScene() {
-        // ——— Build the Connect‐4 grid (7 cols × 6 rows) ———
+        // 1) Build the static board
         GridPane board = new GridPane();
         board.setHgap(5);
         board.setVgap(5);
@@ -239,44 +244,77 @@ public class ConnectFourApp extends Application {
             for (int col = 0; col < 7; col++) {
                 Circle cell = new Circle(20, Color.LIGHTGRAY);
                 cell.setStroke(Color.DARKGRAY);
-                final int c = col;
-                cell.setOnMouseClicked(e -> {
-                    try {
-                        conn.sendMessage(new Message(
-                                UUID.randomUUID().toString(),
-                                MessageType.MOVE,
-                                Integer.toString(c),
-                                currentUser.getUsername(),
-                                null,
-                                System.currentTimeMillis()
-                        ));
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                });
                 cells[row][col] = cell;
                 board.add(cell, col, row);
             }
         }
 
-        // ——— Build the chat panel ———
-        chatArea = new TextArea();
+        // 2) Turn input UI + status field
+        TextField colField = new TextField();
+        colField.setPromptText("0–6");
+        colField.setPrefWidth(50);
+
+        TextField statusField = new TextField();
+        statusField.setEditable(false);
+        statusField.setPrefWidth(120);
+        statusField.setText(myTurn ? "Your turn!" : "Opponent…");
+
+        Button dropBtn = new Button("Drop");
+        dropBtn.setDisable(!myTurn);  // only clickable when it's your turn
+
+        // only enable when a valid 0–6 is entered
+        colField.textProperty().addListener((obs, o, n) -> {
+            try {
+                int c = Integer.parseInt(n.trim());
+                dropBtn.setDisable(! (myTurn && c >= 0 && c <= 6));
+            } catch (Exception ex) {
+                dropBtn.setDisable(true);
+            }
+        });
+
+        dropBtn.setOnAction(e -> {
+            String txt = colField.getText().trim();
+            try {
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.MOVE,
+                        txt,
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            // immediately switch to opponent:
+            myTurn = false;
+            statusField.setText("Opponent…");
+            dropBtn.setDisable(true);
+            colField.clear();
+        });
+
+        HBox inputRow = new HBox(10,
+                new Label("Column:"), colField, dropBtn, statusField
+        );
+        inputRow.setAlignment(Pos.CENTER);
+
+        // 3) Chat panel (unchanged)
+        TextArea chatArea = new TextArea();
         chatArea.setEditable(false);
         chatArea.setWrapText(true);
-        chatArea.setPrefWidth(250);
-        chatArea.setPrefHeight(300);
+        chatArea.setPrefSize(250, 300);
 
         TextField chatInput = new TextField();
-        chatInput.setPromptText("Type message...");
+        chatInput.setPromptText("Type message…");
         Button sendBtn = new Button("Send");
-        sendBtn.setOnAction(e -> {
-            String text = chatInput.getText().trim();
-            if (!text.isEmpty()) {
+        sendBtn.setOnAction(ev -> {
+            String txt = chatInput.getText().trim();
+            if (!txt.isEmpty()) {
                 try {
                     conn.sendMessage(new Message(
                             UUID.randomUUID().toString(),
                             MessageType.CHAT,
-                            text,
+                            txt,
                             currentUser.getUsername(),
                             null,
                             System.currentTimeMillis()
@@ -287,13 +325,11 @@ public class ConnectFourApp extends Application {
                 chatInput.clear();
             }
         });
-
         HBox chatForm = new HBox(5, chatInput, sendBtn);
         chatForm.setAlignment(Pos.CENTER);
 
-        // ——— Surrender button ———
         Button surrenderBtn = new Button("Surrender");
-        surrenderBtn.setOnAction(e -> {
+        surrenderBtn.setOnAction(ev -> {
             try {
                 conn.sendMessage(new Message(
                         UUID.randomUUID().toString(),
@@ -309,97 +345,68 @@ public class ConnectFourApp extends Application {
         });
 
         VBox chatPane = new VBox(10,
-                new Label("Chat"),
-                chatArea,
-                chatForm,
-                surrenderBtn
+                new Label("Chat"), chatArea, chatForm, surrenderBtn
         );
         chatPane.setPadding(new Insets(10));
         chatPane.setAlignment(Pos.CENTER);
 
-        // ——— Combine board + chat in one scene ———
-        HBox root = new HBox(20, board, chatPane);
+        // 4) Layout everything
+        VBox leftPane = new VBox(15, inputRow, board);
+        leftPane.setAlignment(Pos.CENTER);
+        HBox root = new HBox(20, leftPane, chatPane);
         root.setPadding(new Insets(10));
-        gameScene = new Scene(root, 700, 400);
 
+        gameScene = new Scene(root, 750, 450);
         primaryStage.setScene(gameScene);
+        primaryStage.show();
 
-        // ——— Start a background listener for incoming messages ———
+        // 5) Listener thread: paint moves, chat, end, *and* flip turns
         new Thread(() -> {
             try {
                 while (true) {
                     Message msg = conn.receiveMessage();
-                    switch (msg.getType()) {
-                        case CHAT:
-                            Platform.runLater(() ->
-                                    chatArea.appendText(msg.getSender() + ": " + msg.getContent() + "\n")
-                            );
-                            break;
+                    MessageType t = msg.getType();
 
-                        case MOVE:
-                            // payload is the column index, server must also tell row.
-                            // here we assume server encodes "col,row" in content:
-                            String[] parts = msg.getContent().split(",", -1);
-                            int col = Integer.parseInt(parts[0]);
-                            int row = Integer.parseInt(parts[1]);
-                            Color color = msg.getSender().equals(currentUser.getUsername())
-                                    ? Color.RED : Color.YELLOW;
-                            Platform.runLater(() ->
-                                    cells[row][col].setFill(color)
-                            );
-                            break;
+                    if (t == MessageType.MOVE) {
+                        // “col,row”
+                        String[] parts = msg.getContent().split(",",2);
+                        int c = Integer.parseInt(parts[0]);
+                        int r = Integer.parseInt(parts[1]);
+                        Color fill = msg.getSender().equals(currentUser.getUsername())
+                                ? Color.RED
+                                : Color.YELLOW;
+                        Platform.runLater(() -> cells[r][c].setFill(fill));
 
-                        case GAME_END:
+                        // if it was *their* move, now it's your turn
+                        if (!msg.getSender().equals(currentUser.getUsername())) {
+                            myTurn = true;
                             Platform.runLater(() -> {
-                                int checkResult;
-                                AlertType type = AlertType.INFORMATION;
-                                String result="";
-                                if (msg.getContent().equals("YOU_WIN")){
-                                    checkResult =0;
-                                }
-                                else if (msg.getContent().equals("YOU_LOSE")){
-                                    checkResult =1;
-                                }
-                                else{
-                                    checkResult =2;
-                                }
-                                if (checkResult == 0 || checkResult == 2){
-                                    type = AlertType.INFORMATION;
-                                }
-                                if (checkResult == 0){
-                                    result = "You won!";
-                                }
-                                else if (checkResult == 1){
-                                    result = "You lost!";
-                                }
-                                else{
-                                    result = "Draw!";
-                                }
-                                new Alert(type, result).showAndWait();
-                                if (checkResult == 0) {
-                                    this.currentUser.setWinCount(this.currentUser.getWinCount()+1);
-                                }
-                                else if (checkResult == 1) {
-                                    this.currentUser.setDrawCount(this.currentUser.getDrawCount()+1);
-                                }
-                                else{
-                                    this.currentUser.setLossCount(this.currentUser.getLossCount()+1);
-                                }
-
-                                this.currentUser.setGamesPlayed(this.currentUser.getGamesPlayed()+1);
-
-                                showOptionMenuScene();
+                                statusField.setText("Your turn!");
+                                dropBtn.setDisable(false);
                             });
-                            return;  // stop listening
-
-                        default:
-                            break;
+                        }
+                    }
+                    else if (t == MessageType.CHAT) {
+                        Platform.runLater(() ->
+                                chatArea.appendText(msg.getSender()+": "+msg.getContent()+"\n")
+                        );
+                    }
+                    else if (t == MessageType.GAME_END) {
+                        final String outcome;
+                        if ("YOU_WIN".equals(msg.getContent()))  outcome = "You won!";
+                        else if ("YOU_LOSE".equals(msg.getContent())) outcome = "You lost!";
+                        else                                           outcome = "Draw!";
+                        Platform.runLater(() -> {
+                            new Alert(AlertType.INFORMATION, outcome).showAndWait();
+                            showOptionMenuScene();
+                        });
+                        return;
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
-        }, "GameListener-Thread").start();
+        }, "GameListener").start();
     }
 
 

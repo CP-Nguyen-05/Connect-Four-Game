@@ -23,6 +23,7 @@ public class RoomController {
 
     private Thread createThread;
     private String lastCreatedRoomId;
+    private boolean hostRoom = false;
 
     private final List<RoomView> rooms;       // plain List
     private final TextArea roomListArea;      // where we show them
@@ -110,7 +111,8 @@ public class RoomController {
             roomListArea.setDisable(true);
             roomIdField.setDisable(true);
         });
-
+        hostRoom = true;
+        app.setMyTurn(hostRoom);
         createThread = new Thread(() -> {
             try {
                 // 1) ask server to make a room
@@ -127,7 +129,6 @@ public class RoomController {
                 Message created = conn.receiveMessage();
                 if (created.getType() == MessageType.ROOM_CREATED) {
                     lastCreatedRoomId = created.getContent();
-
                 }
 
                 // 3) switch UI
@@ -169,6 +170,8 @@ public class RoomController {
             } catch (Exception ignored) {}
         }
         lastCreatedRoomId = null;
+        hostRoom = false;
+        app.setMyTurn(hostRoom);
         // 3) go back to the lobby
         app.showRoomScene();
     }
@@ -243,6 +246,14 @@ public class RoomController {
             roomListArea.setDisable(true);
             roomIdField.setDisable(true);
         });
+        if (hostRoom) {
+            app.setMyTurn(true);
+            System.out.println("Host room");
+        }
+        else{
+            System.out.println("This is not Host room");
+            app.setMyTurn(false);
+        }
 
         new Thread(() -> {
             try {

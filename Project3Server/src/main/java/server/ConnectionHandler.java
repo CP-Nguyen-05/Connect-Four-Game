@@ -176,6 +176,7 @@ public class ConnectionHandler implements Runnable {
                     case MOVE:
                         if (currentRoomId != null) {
                             // forward only to the _other_ player in your room
+                            System.out.println("Move go to ConnectionHandler.1");
                             server.getRoomManager()
                                     .findRoomById(currentRoomId)
                                     .ifPresent(room -> {
@@ -185,9 +186,11 @@ public class ConnectionHandler implements Runnable {
                                                 .forEach(other -> {
                                                     ConnectionHandler opp = server.findByUsername(other);
                                                     if (opp != null) opp.sendMessage(msg);
+                                                    System.out.println("Move go to ConnectionHandler.2");
                                                 });
                                     });
                         } else {
+                            System.out.println("Move go to ConnectionHandler.else");
                             server.broadcast(msg);
                         }
                         break;
