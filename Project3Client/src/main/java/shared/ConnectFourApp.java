@@ -4,6 +4,8 @@ import Controller.LoginController;
 import Controller.RoomView;
 import Controller.RoomController;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
@@ -11,7 +13,9 @@ import java.util.ArrayList;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.scene.layout.StackPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
@@ -19,7 +23,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.scene.shape.Circle;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Alert;
@@ -28,9 +31,6 @@ import java.net.SocketTimeoutException;
 import javafx.scene.control.ProgressIndicator;
 
 
-
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 
@@ -43,7 +43,7 @@ public class ConnectFourApp extends Application {
     private ClientConnection conn;
 
     // Font
-    public static final String FONT_PATH = "/fonts/W95FA.otf";
+    public static final String FONT_PATH = "/fonts/m6x11plus.ttf";
     public static final double DEFAULT_FONT_SIZE = 18;
     public static Font globalFont;
     public static String globalFontFamily = "W95FA";
@@ -66,6 +66,11 @@ public class ConnectFourApp extends Application {
     public void setCurrentRoomId(String id) {
         this.currentRoomId = id;
     }
+
+//    FileInputStream wallpaperFile = new FileInputStream("/backgrounds/wallpaper.jpg");
+//    Image wallpaper = new Image(wallpaperFile);
+//    ImageView wallpaperView = new ImageView(wallpaper);
+//    wallpaperView.setX(0);
 
     private void loadCustomFont() {
         globalFont = Font.loadFont(getClass().getResourceAsStream(FONT_PATH), DEFAULT_FONT_SIZE);
@@ -144,14 +149,14 @@ public class ConnectFourApp extends Application {
 
     public void showOptionMenuScene() {
         Label title = new Label("Connect Four");
-        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 80));  // Big title
+        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 120));  // Big title
         title.setStyle(
                 "-fx-text-fill: white;" +
                 "-fx-background-color: transparent;" +
                 "-fx-padding: 0 0 0 0;" +
                 "-fx-text-alignment: center;"
         );
-        title.setAlignment(Pos.CENTER);
+        title.setAlignment(Pos.TOP_CENTER);
         title.setMaxWidth(Double.MAX_VALUE);
 
         Button lanButton = new Button("LAN Play");
@@ -187,6 +192,7 @@ public class ConnectFourApp extends Application {
 
         StackPane background = new StackPane(layout);
         background.setStyle("-fx-background-color: #008081;");
+
 
         Scene scene = new Scene(background, 1600, 900);
         primaryStage.setScene(scene);
