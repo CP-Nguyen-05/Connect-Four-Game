@@ -323,7 +323,7 @@ public class ConnectionHandler implements Runnable {
                                                 System.currentTimeMillis()
                                         ));
                                     }
-
+                                    System.out.println(roomId + " started game");
                                     // hand off to your GameSession runner
                                    // new Thread(new GameSession(ch1, ch2), "GameSession-" + roomId).start();
                                     GameSession session = new GameSession(ch1, ch2,server);
@@ -353,7 +353,7 @@ public class ConnectionHandler implements Runnable {
                         username = msg.getSender();
                         server.getRoomManager().findRoomById(rid).ifPresent(room -> {
                             server.getRoomManager().removeRoom(rid);
-                            System.out.println(username + "has been cancelled "+rid);
+                            System.out.println(username + " has been cancelled "+rid);
                         });
                         sendMessage(new Message(
                                 UUID.randomUUID().toString(),

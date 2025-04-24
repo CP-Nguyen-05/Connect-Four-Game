@@ -150,9 +150,11 @@ public class GameSession implements Runnable {
         List<User> users = ds.loadUsers();
         for (User u : users) {
             if (u.getUsername().equals(winner.getUsername())) {
+                u.setScore(u.getScore()+10);
                 u.setWinCount(u.getWinCount() + 1);
                 u.setGamesPlayed(u.getGamesPlayed() + 1);
             } else if (u.getUsername().equals(loser.getUsername())) {
+                u.setScore(u.getScore()-100);
                 u.setLossCount(u.getLossCount() + 1);
                 u.setGamesPlayed(u.getGamesPlayed() + 1);
             }
