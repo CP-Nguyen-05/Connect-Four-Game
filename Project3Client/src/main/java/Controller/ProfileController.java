@@ -28,25 +28,30 @@ public class ProfileController {
         this.app = app;
 
         // build the UI
-        Button homeButton = new Button("Home");
+        Button homeButton = new Button("BACK");
         homeButton.setOnAction(e -> app.showOptionMenuScene());
-        homeButton.setStyle("-fx-background-color: #1D90FF; -fx-text-fill: white; -fx-border-color: white");
-
-        HBox homeArea = new HBox(homeButton);
-        homeArea.setAlignment(Pos.TOP_LEFT);
-        homeArea.setPadding(new Insets(10));
-
-        usernameOnlyLabel.setStyle(
-                "-fx-background-color: #F5B759;" +
+        homeButton.setPrefWidth(225);
+        homeButton.setStyle(
+                "-fx-background-color: #FF8C00;" +
                         "-fx-text-fill: white;" +
-                        "-fx-font-size: 36;" +
-                        "-fx-border-color: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-font-size: 24px;" +
                         "-fx-border-width: 2;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-border-radius: 10;" +
-                        "-fx-padding: 10;" +
-                        "-fx-alignment: center;"
+                        "-fx-border-radius: 5;" +
+                        "-fx-background-radius: 5;" +
+                        "-fx-cursor: hand;"
         );
+
+//        usernameOnlyLabel.setStyle(
+//                "-fx-background-color: #0087F1;" +
+//                        "-fx-text-fill: white;" +
+//                        "-fx-font-size: 36;" +
+//                        "-fx-border-width: 2;" +
+//                        "-fx-background-radius: 10;" +
+//                        "-fx-border-radius: 10;" +
+//                        "-fx-padding: 10;" +
+//                        "-fx-alignment: center;"
+//        );
         usernameOnlyLabel.setAlignment(Pos.CENTER);
         usernameOnlyLabel.setMaxWidth(300);
         usernameOnlyLabel.setWrapText(true);
@@ -54,16 +59,16 @@ public class ProfileController {
         VBox usernameBox = new VBox(usernameOnlyLabel);
         usernameBox.setAlignment(Pos.CENTER);
         usernameBox.setPadding(new Insets(10));
+        usernameBox.setMaxWidth(420);
 
         // Delete button box (bottom part)
-        Button deleteButton = new Button("Delete Account");
+        Button deleteButton = new Button("DELETE ACCOUNT");
+        deleteButton.setPrefWidth(225);
         deleteButton.setStyle(
-                "-fx-background-color: #e74c3c;" +
+                "-fx-background-color: #F24339;" +
                         "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
-                        "-fx-font-size: 24px;" +              // ⬅️ Larger font
-                        "-fx-padding: 15 30 15 30;" +
-                        "-fx-border-color: #c0392b;" +
+                        "-fx-font-size: 24px;" +
                         "-fx-border-width: 2;" +
                         "-fx-border-radius: 5;" +
                         "-fx-background-radius: 5;" +
@@ -71,12 +76,33 @@ public class ProfileController {
         );
         deleteButton.setOnAction(e -> app.showDeleteAccountConfirm());
 
-        VBox deleteBox = new VBox(deleteButton);
+        VBox deleteBox = new VBox(10, deleteButton, homeButton);
         deleteBox.setAlignment(Pos.CENTER);
         deleteBox.setPadding(new Insets(20));
-        deleteBox.setStyle("-fx-background-color: #03BF9A; -fx-background-radius: 30;");
+        deleteBox.setStyle("-fx-background-color: #374A4D; -fx-background-radius: 30;");
 
-        VBox statsArea = new VBox(10,
+        scoreLabel.setStyle("-fx-text-fill: #FFF");
+        gamesPlayedLabel.setStyle("-fx-text-fill: #FFF");
+        winCountLabel.setStyle("-fx-text-fill: #FFF");
+        lossCountLabel.setStyle("-fx-text-fill: #FFF");
+        drawCountLabel.setStyle("-fx-text-fill: #FFF");
+
+        usernameOnlyLabel.setStyle(
+                "-fx-background-color: #3E926F;" +
+                        "-fx-text-fill: #FFF;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-font-size: 36;" +
+                        "-fx-border-width: 2;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-padding: 10;" +
+                        "-fx-alignment: center;"
+        );
+        usernameOnlyLabel.setAlignment(Pos.CENTER);
+        usernameOnlyLabel.setMaxWidth(400);
+        usernameOnlyLabel.setWrapText(true);
+
+        VBox statsArea = new VBox(30,
                 createStatRow("Score:", scoreLabel),
                 createStatRow("Games Played:", gamesPlayedLabel),
                 createStatRow("Wins:", winCountLabel),
@@ -85,24 +111,24 @@ public class ProfileController {
         );
         statsArea.setStyle("-fx-font-size: 36px;" +
                 "-fx-alignment: center;" +
-                "-fx-background-color: white;" +
+                "-fx-background-color: #1D2529;" +
                 "-fx-border-width: 2;" +
-                "-fx-border-radius: 5;" +
-                "-fx-background-radius: 5;"
+                "-fx-background-radius: 10;" +
+                "-fx-border-radius: 10;" +
+                "-fx-padding: 20 10 50 10;"
         );
         statsArea.setAlignment(Pos.CENTER);
         statsArea.setMaxWidth(400);
         statsArea.setMaxHeight(600);
         statsArea.setPadding(new Insets(20));
         // Combine into one vertical layout with spacing
-        VBox centerBox = new VBox(40, usernameBox, statsArea, deleteBox);  // ⬅️ 40px gap
+        VBox centerBox = new VBox(80, usernameBox, statsArea, deleteBox);
         centerBox.setAlignment(Pos.CENTER);
 
         // Combine with layout
         BorderPane root = new BorderPane();
-        root.setTop(homeArea);      // Home at top-left
-        root.setCenter(centerBox);  // Stats + delete in center
-        root.setStyle("-fx-background-color: #03BF9A;");
+        root.setCenter(centerBox);  // Stats + delete in a center
+        root.setStyle("-fx-background-color: #374A4D;");
 
         scene = new Scene(root, 1600, 900);
         app.applyGlobalStyles(scene);
@@ -110,7 +136,7 @@ public class ProfileController {
 
     /** Call this right before showing the profile scene. */
     public void displayProfileInfo(User user) {
-        usernameOnlyLabel.setText(user.getUsername());
+        usernameOnlyLabel.setText(user.getUsername() + "'S PROFILE");
         scoreLabel.setText(String.valueOf(user.getScore()));
         gamesPlayedLabel.setText(String.valueOf(user.getGamesPlayed()));
         winCountLabel.setText(String.valueOf(user.getWinCount()));
@@ -122,6 +148,7 @@ public class ProfileController {
         Label label = new Label(labelText);
         label.setMinWidth(150);  // consistent width for titles
         label.setAlignment(Pos.CENTER_LEFT);  // left-align title
+        label.setStyle("-fx-text-fill: #FFF");
 
         valueLabel.setMaxWidth(Double.MAX_VALUE);
         valueLabel.setAlignment(Pos.CENTER_RIGHT);  // right-align value

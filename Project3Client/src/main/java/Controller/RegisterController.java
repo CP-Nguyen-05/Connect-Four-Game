@@ -27,8 +27,9 @@ public class RegisterController {
 
     private void buildScene() {
         // Title label
-        Label title = new Label("Register");
-        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 36));
+        Label title = new Label("REGISTER");
+        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 48));
+        title.setStyle("-fx-text-fill: #F98C02");
         HBox titleBox = new HBox(title);
         titleBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -45,14 +46,16 @@ public class RegisterController {
         // Message label
         messageLabel = new Label();
         HBox messageBox = new HBox(messageLabel);
+        messageLabel.setStyle("-fx-text-fill: #F24339");
         messageBox.setAlignment(Pos.CENTER_LEFT);
 
         // Buttons
         Button submitBtn = new Button("Sign Up");
+        submitBtn.setStyle("-fx-background-color: #F98C02; -fx-text-fill: #FFF; -fx-font-weight: bold;");
         submitBtn.setMaxWidth(Double.MAX_VALUE);
 
         Button backBtn = new Button("Already have an account? Log in");
-        backBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #26268C; -fx-underline: true; -fx-cursor: hand;");
+        backBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #F98C02; -fx-underline: true; -fx-cursor: hand;");
 
         submitBtn.setOnAction(e -> doRegister());
         backBtn.setOnAction(e -> app.showLoginScene());
@@ -71,16 +74,17 @@ public class RegisterController {
         form.setMaxWidth(500);
         form.setMaxHeight(200);
         form.setPadding(new Insets(20));
-        form.setStyle("-fx-background-color: #C0C0C0; -fx-border-color: #FFF; -fx-border-radius: 10; -fx-background-radius: 10;");
+        form.setStyle("-fx-background-color: #1D2529; -fx-border-color: #374A4D; -fx-border-radius: 10; -fx-background-radius: 10;");
 
         // Root layout
         StackPane root = new StackPane(form);
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #008081;");
+        root.setStyle("-fx-background-color: #374A4D;");
+        root.requestFocus();
 
         // Scene
         scene = new Scene(root, 1600, 900);
-        app.applyGlobalStyles(scene);  // ✅ Apply global font style
+        app.applyGlobalStyles(scene);
     }
 
     public Scene getScene() {

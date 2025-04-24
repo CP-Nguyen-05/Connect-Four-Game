@@ -26,8 +26,9 @@ public class LoginController {
 
     private void buildScene() {
         // Title label styled like original
-        Label title = new Label("Login");
-        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 36));
+        Label title = new Label("LOGIN");
+        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 48));
+        title.setStyle("-fx-text-fill: #0087F1");
 
         HBox titleBox = new HBox(title);
         titleBox.setAlignment(Pos.CENTER_LEFT);
@@ -40,15 +41,17 @@ public class LoginController {
         passwordField.setPromptText("Password");
 
         // Buttons
-        Button loginBtn = new Button("Login");
+        Button loginBtn = new Button("LOGIN");
         loginBtn.setMaxWidth(Double.MAX_VALUE);
+        loginBtn.setStyle("-fx-background-color: #0087F1; -fx-text-fill: #FFF; -fx-font-weight: bold;");
 
         Button regBtn = new Button("Need an account? Sign up");
-        regBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #26268C; -fx-underline: true; -fx-cursor: hand;");
+        regBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #0087F1; -fx-underline: true; -fx-cursor: hand;");
 
         // Message label
         messageLabel = new Label();
         HBox messageBox = new HBox(messageLabel);
+        messageLabel.setStyle("-fx-text-fill: #F24339");
         messageBox.setAlignment(Pos.CENTER_LEFT);
 
         // Button actions
@@ -68,12 +71,13 @@ public class LoginController {
         form.setMaxWidth(500);
         form.setMaxHeight(200);
         form.setPadding(new Insets(20));
-        form.setStyle("-fx-background-color: #C0C0C0; -fx-border-color: #FFF; -fx-border-radius: 10; -fx-background-radius: 10;");
+        form.setStyle("-fx-background-color: #1D2529; -fx-border-color: #374A4D; -fx-border-radius: 10; -fx-background-radius: 10;");
 
         // Root layout
         StackPane root = new StackPane(form);
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #008081;");
+        root.setStyle("-fx-background-color: #374A4D;");
+        root.requestFocus();
 
         // Set scene
         scene = new Scene(root, 1600, 900);

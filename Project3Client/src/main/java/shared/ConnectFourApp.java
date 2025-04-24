@@ -66,11 +66,6 @@ public class ConnectFourApp extends Application {
         this.currentRoomId = id;
     }
 
-//    FileInputStream wallpaperFile = new FileInputStream("/backgrounds/wallpaper.jpg");
-//    Image wallpaper = new Image(wallpaperFile);
-//    ImageView wallpaperView = new ImageView(wallpaper);
-//    wallpaperView.setX(0);
-
     private void loadCustomFont() {
         globalFont = Font.loadFont(getClass().getResourceAsStream(FONT_PATH), DEFAULT_FONT_SIZE);
         if (globalFont != null) {
@@ -152,10 +147,22 @@ public class ConnectFourApp extends Application {
     }
 
     public void showOptionMenuScene() {
-        Label title = new Label("Connect Four");
-        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 120));  // Big title
+        Image bgImage = new Image(getClass().getResource("/backgrounds/wallpaper_with_effect.jpg").toExternalForm());
+
+        BackgroundImage bg = new BackgroundImage(
+                bgImage,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                new BackgroundSize(100, 100, true, true, true, false)
+        );
+
+        Label title = new Label("CONNECT FOUR");
+//        title.setFont(Font.font(ConnectFourApp.globalFontFamily));  // Big title
         title.setStyle(
                 "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-font-size: 160;" +
                 "-fx-background-color: transparent;" +
                 "-fx-padding: 0 0 0 0;" +
                 "-fx-text-alignment: center;"
@@ -163,11 +170,21 @@ public class ConnectFourApp extends Application {
         title.setAlignment(Pos.TOP_CENTER);
         title.setMaxWidth(Double.MAX_VALUE);
 
-        Button lanButton = new Button("LAN Play");
-        Button compButton = new Button("Computer");
-        Button howToPlayButton = new Button("How To Play");
-        Button profileButton = new Button("Profile");
-        Button logoutButton = new Button("Logout");
+        Button lanButton = new Button("LAN PLAY");
+        lanButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: white; -fx-font-weight: bold;");
+        lanButton.setPrefWidth(134);
+        Button compButton = new Button("COMPUTER");
+        compButton.setPrefWidth(134);
+        compButton.setStyle("-fx-background-color: #008081; -fx-text-fill: white; -fx-font-weight: bold;");
+        Button howToPlayButton = new Button("HOW TO PLAY");
+        howToPlayButton.setPrefWidth(134);
+        howToPlayButton.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-weight: bold;");
+        Button profileButton = new Button("PROFILE");
+        profileButton.setPrefWidth(134);
+        profileButton.setStyle("-fx-background-color: #3E926F; -fx-text-fill: white; -fx-font-weight: bold;");
+        Button logoutButton = new Button("LOGOUT");
+        logoutButton.setPrefWidth(134);
+        logoutButton.setStyle("-fx-background-color: #F24339; -fx-text-fill: white; -fx-font-weight: bold;");
 
         lanButton.setOnAction(e -> showRoomScene());
         // compBtn.setOnAction(e -> startSinglePlayer());
@@ -175,27 +192,27 @@ public class ConnectFourApp extends Application {
         profileButton.setOnAction(e -> showProfileScene());
         logoutButton.setOnAction(e -> logout());
 
-        VBox root = new VBox(30, lanButton, compButton, howToPlayButton, profileButton, logoutButton);
+        VBox root = new VBox(10, lanButton, compButton, howToPlayButton, profileButton, logoutButton);
         root.setStyle(
-                "-fx-background-color: #C0C0C0;" +         // VBox background
-                        "-fx-border-color: #FFFFFF;" +            // Border color
+                "-fx-background-color: #374A4D;" +         // VBox background// Border color
                         "-fx-border-width: 3;" +                  // Border thickness
                         "-fx-border-radius: 20;" +                // Rounded border corners
-                        "-fx-background-radius: 20;"              // Rounded background to match
+                        "-fx-background-radius: 20;" +              // Rounded background to match
+                        "-fx-effect: dropshadow(gaussian, black, 10, 0.5, 0, 4);"
         );
         // VBox background
         root.setAlignment(Pos.CENTER);
-        root.setMaxWidth(250);
-        root.setMaxHeight(300);
+        root.setMaxWidth(225);
+        root.setMaxHeight(250);
         root.setPrefHeight(300);
-        root.setMinHeight(300);
+        root.setMinHeight(250);
 
         VBox layout = new VBox(50, title, root);  // 50 px space between title and menu
         layout.setAlignment(Pos.CENTER);
         VBox.setMargin(title, new Insets(0, 0, 0, 0));
 
-        StackPane background = new StackPane(layout);
-        background.setStyle("-fx-background-color: #008081;");
+        StackPane background = new StackPane(layout); // layout = your VBox with title + buttons
+        background.setBackground(new Background(bg));
 
 
         Scene scene = new Scene(background, 1600, 900);
@@ -531,7 +548,7 @@ public class ConnectFourApp extends Application {
         VBox root = new VBox(10, titleRow, container, buttonBox);
         root.setPadding(new Insets(20));
         primaryStage.setScene(new Scene(root, 1600, 900));
-        root.setStyle("-fx-background-color: #008081;");
+        root.setStyle("-fx-background-color: #374A4D;");
         applyGlobalStyles(primaryStage.getScene());
     }
     private void showProfileScene() {
@@ -564,7 +581,7 @@ public class ConnectFourApp extends Application {
 
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #008081;");
+        root.setStyle("-fx-background-color: #374A4D;");
 
         primaryStage.setScene(new Scene(root, 1600, 900));
     }
