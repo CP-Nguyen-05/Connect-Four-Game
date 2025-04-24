@@ -39,7 +39,14 @@ public class GameSession implements Runnable {
                     int pid = (current == p1 ? 1 : 2);
                     int row = dropDisc(col, pid);
                     if (row < 0) {
-                        current.sendMessage(error("Column is full!"));
+                        current.sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.ERROR,
+                                "Column is full!",
+                                "SERVER",
+                                null,
+                                System.currentTimeMillis()
+                        ));
                         continue;
                     }
                     // broadcast the move "col,row"
@@ -154,7 +161,9 @@ public class GameSession implements Runnable {
                 u.setWinCount(u.getWinCount() + 1);
                 u.setGamesPlayed(u.getGamesPlayed() + 1);
             } else if (u.getUsername().equals(loser.getUsername())) {
-                u.setScore(u.getScore()-100);
+                if (u.getScore()>0){
+                    u.setScore(u.getScore()-10);
+                }
                 u.setLossCount(u.getLossCount() + 1);
                 u.setGamesPlayed(u.getGamesPlayed() + 1);
             }

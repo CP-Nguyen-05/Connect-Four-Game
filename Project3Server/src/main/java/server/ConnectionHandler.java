@@ -188,26 +188,13 @@ public class ConnectionHandler implements Runnable {
                         //handleChat(msg);
                         break;
                     case MOVE:
-//                        if (currentRoomId != null) {
-//                            // forward only to the _other_ player in your room
-//                            System.out.println("Move go to ConnectionHandler.1");
-//                            server.getRoomManager()
-//                                    .findRoomById(currentRoomId)
-//                                    .ifPresent(room -> {
-//                                        room.getPlayers().stream()
-//                                                .map(User::getUsername)
-//                                                .filter(un -> !un.equals(username))
-//                                                .forEach(other -> {
-//                                                    ConnectionHandler opp = server.findByUsername(other);
-//                                                    if (opp != null) opp.sendMessage(msg);
-//                                                    System.out.println("Move go to ConnectionHandler.2");
-//                                                });
-//                                    });
-//                        } else {
-//                            System.out.println("Move go to ConnectionHandler.else");
-//                            server.broadcast(msg);
-//                        }
-//                        break;
+                        if (currentRoomId != null) {
+                            GameSession gs = server.getGameSession(currentRoomId);
+                            if (gs != null) {
+                                gs.handleMessage(msg);
+                            }
+                        }
+                        break;
                     case DELETE_ACCOUNT:
                         String user = msg.getSender();
                         String pass = msg.getContent();
