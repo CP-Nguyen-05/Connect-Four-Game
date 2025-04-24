@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -16,6 +17,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Server {
 	private static final int PORT = 12345;
 	private final Set<ConnectionHandler> clients = ConcurrentHashMap.newKeySet();
+	private final Map<String,GameSession> games = new ConcurrentHashMap<>();
+
+	public void addGameSession(String roomId, GameSession gs) {
+		games.put(roomId, gs);
+		new Thread(gs, "GameSession-" + roomId).start();
+	}
+
+	public GameSession getGameSession(String roomId) {
+		return games.get(roomId);
+	}
+
+	public void removeGameSession(String roomId) {
+		games.remove(roomId);
+	}
 
 	private final RoomManager roomManager = new RoomManager();
 

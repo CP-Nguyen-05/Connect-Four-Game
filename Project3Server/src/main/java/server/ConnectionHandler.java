@@ -34,6 +34,10 @@ public class ConnectionHandler implements Runnable {
     private User user;
     private String currentRoomId;
 
+    public String getCurrentRoomId() {
+        return currentRoomId;
+    }
+
     public ConnectionHandler(Socket socket, Server server) {
         this.socket = socket;
         this.server = server;
@@ -171,26 +175,39 @@ public class ConnectionHandler implements Runnable {
                 Message msg = readMessage();
                 switch (msg.getType()) {
                     case CHAT:
-                        handleChat(msg);
+//                        handleChat(msg);
+//                        break;
+                        if (currentRoomId != null) {
+                            GameSession gs = server.getGameSession(currentRoomId);
+                            if (gs != null) {
+                                gs.handleMessage(msg);
+                                break;    // do NOT fall through to lobby broadcast
+                            }
+                        }
+                        // otherwise it’s lobby chat (or pre‐game), fall back to your existing handler
+                        //handleChat(msg);
                         break;
                     case MOVE:
-                        if (currentRoomId != null) {
-                            // forward only to the _other_ player in your room
-                            server.getRoomManager()
-                                    .findRoomById(currentRoomId)
-                                    .ifPresent(room -> {
-                                        room.getPlayers().stream()
-                                                .map(User::getUsername)
-                                                .filter(un -> !un.equals(username))
-                                                .forEach(other -> {
-                                                    ConnectionHandler opp = server.findByUsername(other);
-                                                    if (opp != null) opp.sendMessage(msg);
-                                                });
-                                    });
-                        } else {
-                            server.broadcast(msg);
-                        }
-                        break;
+//                        if (currentRoomId != null) {
+//                            // forward only to the _other_ player in your room
+//                            System.out.println("Move go to ConnectionHandler.1");
+//                            server.getRoomManager()
+//                                    .findRoomById(currentRoomId)
+//                                    .ifPresent(room -> {
+//                                        room.getPlayers().stream()
+//                                                .map(User::getUsername)
+//                                                .filter(un -> !un.equals(username))
+//                                                .forEach(other -> {
+//                                                    ConnectionHandler opp = server.findByUsername(other);
+//                                                    if (opp != null) opp.sendMessage(msg);
+//                                                    System.out.println("Move go to ConnectionHandler.2");
+//                                                });
+//                                    });
+//                        } else {
+//                            System.out.println("Move go to ConnectionHandler.else");
+//                            server.broadcast(msg);
+//                        }
+//                        break;
                     case DELETE_ACCOUNT:
                         String user = msg.getSender();
                         String pass = msg.getContent();
@@ -306,9 +323,12 @@ public class ConnectionHandler implements Runnable {
                                                 System.currentTimeMillis()
                                         ));
                                     }
-
+                                    System.out.println(roomId + " started game");
                                     // hand off to your GameSession runner
                                    // new Thread(new GameSession(ch1, ch2), "GameSession-" + roomId).start();
+                                    GameSession session = new GameSession(ch1, ch2,server);
+                                    server.addGameSession(roomId, session);
+                                    new Thread(session, "GameSession-" + roomId).start();
                                 }
                             }
                         }
@@ -333,7 +353,7 @@ public class ConnectionHandler implements Runnable {
                         username = msg.getSender();
                         server.getRoomManager().findRoomById(rid).ifPresent(room -> {
                             server.getRoomManager().removeRoom(rid);
-                            System.out.println(username + "has been cancelled "+rid);
+                            System.out.println(username + " has been cancelled "+rid);
                         });
                         sendMessage(new Message(
                                 UUID.randomUUID().toString(),
@@ -345,54 +365,64 @@ public class ConnectionHandler implements Runnable {
                         ));
                         break;
                     case SURRENDER:
-                        String loser = msg.getSender();
-                        roomId = msg.getContent();      // client sent the roomId
-                        server.getRoomManager().findRoomById(roomId).ifPresent(room -> {
-                            // figure out who won/lost
-                            List<User> players = room.getPlayers();
-                            User loserUser  = players.stream()
-                                    .filter(u -> u.getUsername().equals(loser))
-                                    .findFirst().orElse(null);
-                            User winnerUser = players.stream()
-                                    .filter(u -> !u.getUsername().equals(loser))
-                                    .findFirst().orElse(null);
-
-                            if (loserUser != null && winnerUser != null) {
-                                // 1) notify both clients
-                                for (User u : players) {
-                                    ConnectionHandler ch = server.findByUsername(u.getUsername());
-                                    if (ch == null) continue;
-                                    boolean youWin = u.getUsername().equals(winnerUser.getUsername());
-                                    String result = youWin ? "YOU_WIN" : "YOU_LOSE";
-                                    ch.sendMessage(new Message(
-                                            UUID.randomUUID().toString(),
-                                            MessageType.GAME_END,
-                                            result,
-                                            "SERVER",
-                                            u.getUsername(),
-                                            System.currentTimeMillis()
-                                    ));
-                                }
-
-                                // 2) persist updated stats back to players.txt
-                                UserDataStore ds = new UserDataStore();
-                                List<User> all = ds.loadUsers();
-                                for (User u : all) {
-                                    if (u.getUsername().equals(winnerUser.getUsername())) {
-                                        u.setWinCount(   u.getWinCount()   + 1);
-                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
-                                    } else if (u.getUsername().equals(loserUser.getUsername())) {
-                                        u.setLossCount(  u.getLossCount()  + 1);
-                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
-                                    }
-                                }
-                                ds.saveUsers(all);
-
-                                server.getRoomManager().removeRoom(roomId);
-                                System.out.println(loser + " surrendered in " + roomId);
-                                System.out.println(winnerUser.getUsername() + " won in "+ roomId);
+//                        String loser = msg.getSender();
+//                        roomId = msg.getContent();      // client sent the roomId
+//                        server.getRoomManager().findRoomById(roomId).ifPresent(room -> {
+//                            // figure out who won/lost
+//                            List<User> players = room.getPlayers();
+//                            User loserUser  = players.stream()
+//                                    .filter(u -> u.getUsername().equals(loser))
+//                                    .findFirst().orElse(null);
+//                            User winnerUser = players.stream()
+//                                    .filter(u -> !u.getUsername().equals(loser))
+//                                    .findFirst().orElse(null);
+//
+//                            if (loserUser != null && winnerUser != null) {
+//                                // 1) notify both clients
+//                                for (User u : players) {
+//                                    ConnectionHandler ch = server.findByUsername(u.getUsername());
+//                                    if (ch == null) continue;
+//                                    boolean youWin = u.getUsername().equals(winnerUser.getUsername());
+//                                    String result = youWin ? "YOU_WIN" : "YOU_LOSE";
+//                                    ch.sendMessage(new Message(
+//                                            UUID.randomUUID().toString(),
+//                                            MessageType.GAME_END,
+//                                            result,
+//                                            "SERVER",
+//                                            u.getUsername(),
+//                                            System.currentTimeMillis()
+//                                    ));
+//                                }
+//
+//                                // 2) persist updated stats back to players.txt
+//                                UserDataStore ds = new UserDataStore();
+//                                List<User> all = ds.loadUsers();
+//                                for (User u : all) {
+//                                    if (u.getUsername().equals(winnerUser.getUsername())) {
+//                                        u.setWinCount(   u.getWinCount()   + 1);
+//                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
+//                                    } else if (u.getUsername().equals(loserUser.getUsername())) {
+//                                        u.setLossCount(  u.getLossCount()  + 1);
+//                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
+//                                    }
+//                                }
+//                                ds.saveUsers(all);
+//
+//                                server.getRoomManager().removeRoom(roomId);
+//                                System.out.println(loser + " surrendered in " + roomId);
+//                                System.out.println(winnerUser.getUsername() + " won in "+ roomId);
+//                            }
+//                        });
+//                        break;
+                        if (currentRoomId != null) {
+                            GameSession gs = server.getGameSession(currentRoomId);
+                            if (gs != null) {
+                                gs.handleMessage(msg);
+                                break;  // handled by game session
                             }
-                        });
+                        }
+                        // fallback to broadcast in lobby
+                        server.broadcast(msg);
                         break;
 
                     default:
@@ -413,27 +443,46 @@ public class ConnectionHandler implements Runnable {
 
             if (currentRoomId != null) {
                 // treat as surrender
-                Optional<Room> o = server.getRoomManager().findRoomById(currentRoomId);
-                if (o.isPresent()) {
-                    Room room = o.get();
-                    // notify the other player
-                    for (User u : room.getPlayers()) {
-                        if (u.getUsername().equals(username)) continue;
-                        ConnectionHandler ch = server.findByUsername(u.getUsername());
-                        if (ch != null) {
-                            ch.sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
-                                    MessageType.GAME_END,
-                                    "YOU_WIN",
-                                    "SERVER",
-                                    u.getUsername(),
-                                    System.currentTimeMillis()
-                            ));
-                        }
+//                Optional<Room> o = server.getRoomManager().findRoomById(currentRoomId);
+//                if (o.isPresent()) {
+//                    Room room = o.get();
+//                    // notify the other player
+//                    for (User u : room.getPlayers()) {
+//                        if (u.getUsername().equals(username)) continue;
+//                        ConnectionHandler ch = server.findByUsername(u.getUsername());
+//                        if (ch != null) {
+//                            ch.sendMessage(new Message(
+//                                    UUID.randomUUID().toString(),
+//                                    MessageType.GAME_END,
+//                                    "YOU_WIN",
+//                                    "SERVER",
+//                                    u.getUsername(),
+//                                    System.currentTimeMillis()
+//                            ));
+//                        }
+//                    }
+//                    // remove the room so it vanishes from the lobby
+//                    server.getRoomManager().removeRoom(currentRoomId);
+//                    System.out.println(username + " disconnected, treated as surrender in " + currentRoomId);
+//                }
+                if (currentRoomId != null) {
+                    GameSession gs = server.getGameSession(currentRoomId);
+                    if (gs != null) {
+                        // notify opponent of win
+                        gs.handleMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.SURRENDER,
+                                currentRoomId,
+                                username,
+                                null,
+                                System.currentTimeMillis()
+                        ));
                     }
-                    // remove the room so it vanishes from the lobby
-                    server.getRoomManager().removeRoom(currentRoomId);
-                    System.out.println(username + " disconnected, treated as surrender in " + currentRoomId);
+                }
+                server.removeClient(this);
+                if (username != null) {
+                    System.out.println(username + " disconnected");
+                    try { socket.close(); } catch (IOException ignore) {}
                 }
             }
 
@@ -450,56 +499,86 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    private void handleChat(Message msg) {
-        String target = msg.getRecipient();
-
-        // 1) Private message (PM)
-        if (target != null && !target.isEmpty()) {
-            // can’t PM yourself
-            if (target.equals(username)) {
-                sendMessage(new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.ERROR,
-                        "You cannot send a private message to yourself.",
-                        "SERVER",
-                        username,
-                        System.currentTimeMillis()
-                ));
-                return;
-            }
-
-            ConnectionHandler recipientHandler = server.findByUsername(target);
-            if (recipientHandler != null) {
-                // deliver to recipient and echo to sender
-                recipientHandler.sendMessage(msg);
-                sendMessage(msg);
-            } else {
-                sendMessage(new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.ERROR,
-                        "User \"" + target + "\" does not exist.",
-                        "SERVER",
-                        username,
-                        System.currentTimeMillis()
-                ));
-            }
-            return;
-        }
-
-        // 2) No recipient → either lobby chat or in‑game chat
-        else if (currentRoomId != null) {
-            // room chat: only send to handlers in the same room
-            server.getRoomManager()
-                    .findRoomById(currentRoomId)
-                    .ifPresent(room -> {
-                        for (User u : room.getPlayers()) {
-                            ConnectionHandler ch = server.findByUsername(u.getUsername());
-                            if (ch != null) ch.sendMessage(msg);
-                        }
-                    });
+//    private void handleChat(Message msg) {
+//        String target = msg.getRecipient();
+//
+//        // 1) Private message (PM)
+//        if (target != null && !target.isEmpty()) {
+//            // can’t PM yourself
+//            if (target.equals(username)) {
+//                sendMessage(new Message(
+//                        UUID.randomUUID().toString(),
+//                        MessageType.ERROR,
+//                        "You cannot send a private message to yourself.",
+//                        "SERVER",
+//                        username,
+//                        System.currentTimeMillis()
+//                ));
+//                return;
+//            }
+//
+//            ConnectionHandler recipientHandler = server.findByUsername(target);
+//            if (recipientHandler != null) {
+//                // deliver to recipient and echo to sender
+//                recipientHandler.sendMessage(msg);
+//                sendMessage(msg);
+//            } else {
+//                sendMessage(new Message(
+//                        UUID.randomUUID().toString(),
+//                        MessageType.ERROR,
+//                        "User \"" + target + "\" does not exist.",
+//                        "SERVER",
+//                        username,
+//                        System.currentTimeMillis()
+//                ));
+//            }
+//            return;
+//        }
+//
+//        // 2) No recipient → either lobby chat or in‑game chat
+//        else if (currentRoomId != null) {
+//            // room chat: only send to handlers in the same room
+//            server.getRoomManager()
+//                    .findRoomById(currentRoomId)
+//                    .ifPresent(room -> {
+//                        for (User u : room.getPlayers()) {
+//                            ConnectionHandler ch = server.findByUsername(u.getUsername());
+//                            if (ch != null) ch.sendMessage(msg);
+//                        }
+//                    });
+//        } else {
+//            // still in the lobby
+//            server.broadcast(msg);
+//        }
+//    }
+    private void roomJoinAndStartSession(Message msg) throws IOException {
+        String roomId = msg.getContent();
+        Optional<Room> opt = server.getRoomManager().findRoomById(roomId);
+        if (opt.isEmpty()) {
+            sendMessage(errorResponse("Room not found: " + roomId));
         } else {
-            // still in the lobby
-            server.broadcast(msg);
+            Room room = opt.get();
+            if (!room.isOpenForPlayers()) {
+                sendMessage(errorResponse("Room is full: " + roomId));
+            } else {
+                room.addPlayer(this.user);
+                this.currentRoomId = roomId;
+                if (!room.isOpenForPlayers()) {
+                    // start game session
+                    ConnectionHandler ch1 = server.findByUsername(room.getPlayers().get(0).getUsername());
+                    ConnectionHandler ch2 = server.findByUsername(room.getPlayers().get(1).getUsername());
+                    GameSession gs = new GameSession(ch1, ch2,server);
+                    server.addGameSession(roomId, gs);
+                    new Thread(gs, "GameSession-"+roomId).start();
+                    // notify both clients
+                    ch1.sendMessage(new Message(UUID.randomUUID().toString(), MessageType.GAME_START, roomId, "SERVER", ch1.getUsername(), System.currentTimeMillis()));
+                    ch2.sendMessage(new Message(UUID.randomUUID().toString(), MessageType.GAME_START, roomId, "SERVER", ch2.getUsername(), System.currentTimeMillis()));
+                }
+            }
         }
+    }
+
+    private Message errorResponse(String text) {
+        return new Message(UUID.randomUUID().toString(), MessageType.ERROR, text, "SERVER", username, System.currentTimeMillis());
     }
 }

@@ -65,10 +65,6 @@ public class ConnectFourApp extends Application {
     public void setCurrentRoomId(String id) {
         this.currentRoomId = id;
     }
-    private boolean myTurn;
-    public void setMyTurn(boolean isMyTurn) {
-        this.myTurn = isMyTurn;
-    }
 
 //    FileInputStream wallpaperFile = new FileInputStream("/backgrounds/wallpaper.jpg");
 //    Image wallpaper = new Image(wallpaperFile);
@@ -83,6 +79,11 @@ public class ConnectFourApp extends Application {
         } else {
             System.out.println("Failed to load custom font");
         }
+    }
+
+    private boolean myTurn;
+    public void setMyTurn(boolean isMyTurn) {
+        this.myTurn = isMyTurn;
     }
 
     @Override
@@ -451,13 +452,24 @@ public class ConnectFourApp extends Application {
                     }
                     else if (t == MessageType.GAME_END) {
                         final String outcome;
-                        if ("YOU_WIN".equals(msg.getContent()))  outcome = "You won!";
-                        else if ("YOU_LOSE".equals(msg.getContent())) outcome = "You lost!";
+                        if ("YOU_WIN".equals(msg.getContent())) {
+                            outcome = "You won!";
+                            currentUser.setScore(currentUser.getScore()+10);
+                            currentUser.setWinCount(currentUser.getWinCount() + 1);
+                            currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
+                        }
+                        else if ("YOU_LOSE".equals(msg.getContent())) {
+                            outcome = "You lost!";
+                            currentUser.setScore(currentUser.getScore()-10);
+                            currentUser.setLossCount(currentUser.getLossCount() + 1);
+                            currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
+                        }
                         else                                           outcome = "Draw!";
                         Platform.runLater(() -> {
                             new Alert(AlertType.INFORMATION, outcome).showAndWait();
                             showOptionMenuScene();
                         });
+                        setMyTurn(false);
                         return;
                     }
                 }
