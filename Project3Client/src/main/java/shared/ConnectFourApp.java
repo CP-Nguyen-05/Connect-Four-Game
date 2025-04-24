@@ -477,11 +477,18 @@ public class ConnectFourApp extends Application {
                         }
                         else if ("YOU_LOSE".equals(msg.getContent())) {
                             outcome = "You lost!";
-                            currentUser.setScore(currentUser.getScore()-10);
+                            if (currentUser.getScore()>0){
+                                currentUser.setScore(currentUser.getScore()-10);
+                            }
                             currentUser.setLossCount(currentUser.getLossCount() + 1);
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
-                        else                                           outcome = "Draw!";
+                        else{
+                            outcome = "Draw!";
+                            currentUser.setScore(currentUser.getScore());
+                            currentUser.setDrawCount(currentUser.getDrawCount() + 1);
+                            currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
+                        }
                         Platform.runLater(() -> {
                             new Alert(AlertType.INFORMATION, outcome).showAndWait();
                             showOptionMenuScene();
