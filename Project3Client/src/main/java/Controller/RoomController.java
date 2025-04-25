@@ -206,7 +206,7 @@ public class RoomController {
         if (id.isEmpty()) {
             messageLabel.setText("Enter a room ID.");
         } else {
-            joinRoom(id);
+            joinRoom("ROOM " +id);
         }
     }
 

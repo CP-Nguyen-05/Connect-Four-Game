@@ -21,7 +21,7 @@ public class RoomManager {
 
     public Optional<Room> findRoomById(String roomId) {
         return activeRooms.stream()
-                .filter(r -> r.getRoomId().equals("ROOM " + roomId))
+                .filter(r -> r.getRoomId().equals(roomId))
                 .findFirst();
     }
     public synchronized void removeRoom(String roomId) {
