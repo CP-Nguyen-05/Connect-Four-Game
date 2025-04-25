@@ -188,30 +188,45 @@ public class ConnectionHandler implements Runnable {
                             GameSession gs = server.getGameSession(currentRoomId);
                             if (gs != null) {
                                 gs.handleMessage(msg);
+                                break;
+                            }
+                        }
+                        break;
+                    case SURRENDER:
+                        System.out.println(msg.getSender()+" surrendered in "+ currentRoomId);
+                        if (currentRoomId != null) {
+                            GameSession gs = server.getGameSession(currentRoomId);
+                            if (gs != null) {
+                                gs.handleMessage(msg);
+                                break;
                             }
                         }
                         break;
                     case REMATCH_REQUEST:
-                        System.out.println("rematch request received from ConnectionHandler");
                         if (currentRoomId != null) {
                             GameSession gs = server.getGameSession(currentRoomId);
                             if (gs != null) {
-                                System.out.println("rematch request received from ConnectionHandler");
                                 gs.handleMessage(msg);
                                 break;
                             }
                         }
                         break;
                     case REMATCH_REJECT:
-                        System.out.println("rematch reject received from ConnectionHandler");
                         if (currentRoomId != null) {
                             GameSession gs = server.getGameSession(currentRoomId);
                             if (gs != null) {
-                                System.out.println("rematch reject received from ConnectionHandler");
                                 gs.handleMessage(msg);
                                 break;
                             }
                         }
+                        sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.ERROR,
+                                "No active game to rematch/reject.",
+                                "SERVER",
+                                username,
+                                System.currentTimeMillis()
+                        ));
                         break;
                     case DELETE_ACCOUNT:
                         String user = msg.getSender();
@@ -329,7 +344,7 @@ public class ConnectionHandler implements Runnable {
                                     System.out.println(roomId + " started game");
                                     // hand off to your GameSession runner
                                    // new Thread(new GameSession(ch1, ch2), "GameSession-" + roomId).start();
-                                    GameSession session = new GameSession(ch1, ch2,server);
+                                    GameSession session = new GameSession(ch1, ch2,server, roomId);
                                     server.addGameSession(roomId, session);
                                     new Thread(session, "GameSession-" + roomId).start();
                                 }
@@ -366,17 +381,6 @@ public class ConnectionHandler implements Runnable {
                                 username,
                                 System.currentTimeMillis()
                         ));
-                        break;
-                    case SURRENDER:
-                        if (currentRoomId != null) {
-                            GameSession gs = server.getGameSession(currentRoomId);
-                            if (gs != null) {
-                                gs.handleMessage(msg);
-                                break;  // handled by game session
-                            }
-                        }
-                        // fallback to broadcast in lobby
-                        server.broadcast(msg);
                         break;
 
                     default:
@@ -499,7 +503,7 @@ public class ConnectionHandler implements Runnable {
                     // start game session
                     ConnectionHandler ch1 = server.findByUsername(room.getPlayers().get(0).getUsername());
                     ConnectionHandler ch2 = server.findByUsername(room.getPlayers().get(1).getUsername());
-                    GameSession gs = new GameSession(ch1, ch2,server);
+                    GameSession gs = new GameSession(ch1, ch2,server, roomId);
                     server.addGameSession(roomId, gs);
                     new Thread(gs, "GameSession-"+roomId).start();
                     // notify both clients

@@ -292,12 +292,38 @@ public class RoomController {
             }
         }, "JoinRoom-Thread").start();
     }
+    public void waitForGameRematch() throws Exception{
+        if (hostRoom) {
+            hostRoom = false;
+            app.setMyTurn(false);
+        }
+        else{
+            hostRoom = true;
+            app.setMyTurn(true);
+        }
+        Message m;
+        do {
+            m = conn.receiveMessage();
+            if (m.getType() == MessageType.ROOM_CANCELLED) {
+                new Alert(Alert.AlertType.ERROR, "Opponent rejected to rematch").showAndWait();
+                app.showOptionMenuScene();
+                return;
+            }
+        } while (m.getType() != MessageType.GAME_START);
+
+        String roomId = m.getContent();
+        Platform.runLater(() -> {
+            app.setCurrentRoomId(roomId);
+            app.showGameScene();
+        });
+    }
 
     public void waitForGameStart() throws Exception {
         Message m;
         do {
             m = conn.receiveMessage();
             if (m.getType() == MessageType.ROOM_CANCELLED) {
+                app.showRoomScene();
                 return;
             }
         } while (m.getType() != MessageType.GAME_START);

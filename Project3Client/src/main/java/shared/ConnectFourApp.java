@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.ArrayList;
 
 import javafx.application.Application;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -27,8 +30,11 @@ import javafx.scene.shape.Circle;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
 import java.net.SocketTimeoutException;
 import javafx.scene.control.ProgressIndicator;
+import java.util.Optional;
 
 
 import javafx.geometry.Insets;
@@ -363,9 +369,9 @@ public class ConnectFourApp extends Application {
                 ex.printStackTrace();
             }
             // immediately switch to opponent:
-            myTurn = false;
-            statusField.setText("Opponent…");
-            dropBtn.setDisable(true);
+//            myTurn = false;
+//            statusField.setText("Opponent…");
+//            dropBtn.setDisable(true);
             colField.clear();
         });
 
@@ -442,9 +448,17 @@ public class ConnectFourApp extends Application {
                 while (true) {
                     Message msg = conn.receiveMessage();
                     MessageType t = msg.getType();
+                    if (t == MessageType.ERROR) {
+                        // show the alert, then put control back to the user
+                        Platform.runLater(() -> {
+                            new Alert(AlertType.ERROR, msg.getContent()).showAndWait();
+                            // it must still be your turn, so re-enable the drop controls:
+                            dropBtn.setDisable(false);
+                            statusField.setText("Your turn!");
+                        });
+                    }
 
-                    if (t == MessageType.MOVE) {
-                        // “col,row”
+                    else if (t == MessageType.MOVE) {
                         String[] parts = msg.getContent().split(",",2);
                         int c = Integer.parseInt(parts[0]);
                         int r = Integer.parseInt(parts[1]);
@@ -468,6 +482,7 @@ public class ConnectFourApp extends Application {
                         );
                     }
                     else if (t == MessageType.GAME_END) {
+                        setMyTurn(false);
                         final String outcome;
                         if ("YOU_WIN".equals(msg.getContent())) {
                             outcome = "You won!";
@@ -490,10 +505,9 @@ public class ConnectFourApp extends Application {
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
                         Platform.runLater(() -> {
-                            Platform.runLater(() -> showResultScene(outcome));
+                            Platform.runLater(() -> showResultPopUp(outcome));
                             //showOptionMenuScene();
                         });
-                        setMyTurn(false);
                         return;
                     }
                 }
@@ -521,15 +535,27 @@ public class ConnectFourApp extends Application {
                         null,
                         System.currentTimeMillis()
                 ));
-                System.out.println("sended the message rematch to server");
-                roomCtrl.waitForGameStart();
-                System.out.println("rematch rejected");
+                System.out.println(currentRoomId+" sended the message rematch to server");
             }
             catch (Exception ex) {
                 ex.printStackTrace();
+                return;
             }
-//            new Alert(AlertType.ERROR, "Rematch is rejected").showAndWait();
-//            showOptionMenuScene();
+            // 1) immediately show the waiting scene
+            showWaitingScene();
+
+            // 2) now spin off the blocking wait into its own thread
+            new Thread(() -> {
+                try {
+                    roomCtrl.waitForGameRematch();   // this blocks until server replies
+                    // when it returns, it should have already navigated to gameScene,
+                    // or you can handle rejection here:
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    // if rematch was rejected (or error), go back on the FX thread:
+                    Platform.runLater(() -> showOptionMenuScene());
+                }
+            }, "Rematch-Wait-Thread").start();
         });
 
         no.setOnAction(e -> {
@@ -561,6 +587,41 @@ public class ConnectFourApp extends Application {
         resultScene = new Scene(root, 750, 450);
         primaryStage.setScene(resultScene);
     }
+
+
+    private void showResultPopUp(String outcomeText) {
+        // Create an informational Alert dialog
+        Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+        dialog.setTitle("End Game!");
+        dialog.setHeaderText(null);
+        dialog.setContentText(outcomeText);
+
+        // Set custom "Next" button
+        ButtonType nextBtn = new ButtonType("Next", ButtonBar.ButtonData.OK_DONE);
+        dialog.getButtonTypes().setAll(nextBtn);
+
+        // Create a Timeline to auto-dismiss the popup after 10 seconds
+        Timeline autoCloseTimeline = new Timeline(new KeyFrame(Duration.seconds(10), event -> {
+            System.out.println("10 seconds passed without user action. Auto-transitioning...");
+            dialog.setResult(nextBtn); // Set the result as "Next"
+            dialog.hide();             // Close the dialog
+        }));
+        autoCloseTimeline.setCycleCount(1);
+        autoCloseTimeline.play();
+
+        // Show the Alert dialog and wait for the user's response
+        Optional<ButtonType> result = dialog.showAndWait();
+
+        // Stop the timer in case the user responded before the timeout
+        autoCloseTimeline.stop();
+
+        // Process the user's response (or auto-transition)
+        if (result.isPresent() && result.get() == nextBtn) {
+            System.out.println("User clicked Next or timed out. Transitioning to result scene...");
+            showResultScene(outcomeText);
+        }
+    }
+
 
 
     private void showHowToPlayScene() {
