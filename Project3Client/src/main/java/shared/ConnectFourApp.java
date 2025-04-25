@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.ArrayList;
 
 import javafx.application.Application;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -27,8 +30,11 @@ import javafx.scene.shape.Circle;
 import javafx.scene.paint.Color;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
 import java.net.SocketTimeoutException;
 import javafx.scene.control.ProgressIndicator;
+import java.util.Optional;
 
 
 import javafx.geometry.Insets;
@@ -499,7 +505,7 @@ public class ConnectFourApp extends Application {
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
                         Platform.runLater(() -> {
-                            Platform.runLater(() -> showResultScene(outcome));
+                            Platform.runLater(() -> showResultPopUp(outcome));
                             //showOptionMenuScene();
                         });
                         return;
@@ -581,6 +587,41 @@ public class ConnectFourApp extends Application {
         resultScene = new Scene(root, 750, 450);
         primaryStage.setScene(resultScene);
     }
+
+
+    private void showResultPopUp(String outcomeText) {
+        // Create an informational Alert dialog
+        Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+        dialog.setTitle("End Game!");
+        dialog.setHeaderText(null);
+        dialog.setContentText(outcomeText);
+
+        // Set custom "Next" button
+        ButtonType nextBtn = new ButtonType("Next", ButtonBar.ButtonData.OK_DONE);
+        dialog.getButtonTypes().setAll(nextBtn);
+
+        // Create a Timeline to auto-dismiss the popup after 10 seconds
+        Timeline autoCloseTimeline = new Timeline(new KeyFrame(Duration.seconds(10), event -> {
+            System.out.println("10 seconds passed without user action. Auto-transitioning...");
+            dialog.setResult(nextBtn); // Set the result as "Next"
+            dialog.hide();             // Close the dialog
+        }));
+        autoCloseTimeline.setCycleCount(1);
+        autoCloseTimeline.play();
+
+        // Show the Alert dialog and wait for the user's response
+        Optional<ButtonType> result = dialog.showAndWait();
+
+        // Stop the timer in case the user responded before the timeout
+        autoCloseTimeline.stop();
+
+        // Process the user's response (or auto-transition)
+        if (result.isPresent() && result.get() == nextBtn) {
+            System.out.println("User clicked Next or timed out. Transitioning to result scene...");
+            showResultScene(outcomeText);
+        }
+    }
+
 
 
     private void showHowToPlayScene() {
