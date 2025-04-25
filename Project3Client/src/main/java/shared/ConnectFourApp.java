@@ -363,9 +363,9 @@ public class ConnectFourApp extends Application {
                 ex.printStackTrace();
             }
             // immediately switch to opponent:
-            myTurn = false;
-            statusField.setText("Opponent…");
-            dropBtn.setDisable(true);
+//            myTurn = false;
+//            statusField.setText("Opponent…");
+//            dropBtn.setDisable(true);
             colField.clear();
         });
 
@@ -442,9 +442,17 @@ public class ConnectFourApp extends Application {
                 while (true) {
                     Message msg = conn.receiveMessage();
                     MessageType t = msg.getType();
+                    if (t == MessageType.ERROR) {
+                        // show the alert, then put control back to the user
+                        Platform.runLater(() -> {
+                            new Alert(AlertType.ERROR, msg.getContent()).showAndWait();
+                            // it must still be your turn, so re-enable the drop controls:
+                            dropBtn.setDisable(false);
+                            statusField.setText("Your turn!");
+                        });
+                    }
 
-                    if (t == MessageType.MOVE) {
-                        // “col,row”
+                    else if (t == MessageType.MOVE) {
                         String[] parts = msg.getContent().split(",",2);
                         int c = Integer.parseInt(parts[0]);
                         int r = Integer.parseInt(parts[1]);
@@ -468,6 +476,7 @@ public class ConnectFourApp extends Application {
                         );
                     }
                     else if (t == MessageType.GAME_END) {
+                        setMyTurn(false);
                         final String outcome;
                         if ("YOU_WIN".equals(msg.getContent())) {
                             outcome = "You won!";
@@ -493,7 +502,6 @@ public class ConnectFourApp extends Application {
                             Platform.runLater(() -> showResultScene(outcome));
                             //showOptionMenuScene();
                         });
-                        setMyTurn(false);
                         return;
                     }
                 }
@@ -521,15 +529,27 @@ public class ConnectFourApp extends Application {
                         null,
                         System.currentTimeMillis()
                 ));
-                System.out.println("sended the message rematch to server");
-                roomCtrl.waitForGameStart();
-                System.out.println("rematch rejected");
+                System.out.println(currentRoomId+" sended the message rematch to server");
             }
             catch (Exception ex) {
                 ex.printStackTrace();
+                return;
             }
-//            new Alert(AlertType.ERROR, "Rematch is rejected").showAndWait();
-//            showOptionMenuScene();
+            // 1) immediately show the waiting scene
+            showWaitingScene();
+
+            // 2) now spin off the blocking wait into its own thread
+            new Thread(() -> {
+                try {
+                    roomCtrl.waitForGameRematch();   // this blocks until server replies
+                    // when it returns, it should have already navigated to gameScene,
+                    // or you can handle rejection here:
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    // if rematch was rejected (or error), go back on the FX thread:
+                    Platform.runLater(() -> showOptionMenuScene());
+                }
+            }, "Rematch-Wait-Thread").start();
         });
 
         no.setOnAction(e -> {
