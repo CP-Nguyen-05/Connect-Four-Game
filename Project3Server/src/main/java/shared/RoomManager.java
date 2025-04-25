@@ -13,7 +13,7 @@ public class RoomManager {
     }
     private int nextRoomNumber = 1;
     public Room createRoom() {
-        String id = "room" + nextRoomNumber++;
+        String id = "ROOM " + nextRoomNumber++;
         Room r = new Room(id, 2);
         activeRooms.add(r);
         return r;
