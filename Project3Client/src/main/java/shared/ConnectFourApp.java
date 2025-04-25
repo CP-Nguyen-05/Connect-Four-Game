@@ -251,7 +251,13 @@ public class ConnectFourApp extends Application {
             roomListArea.setMaxWidth(800);
             roomListArea.setPrefHeight(500);
             roomListArea.setMaxHeight(500);
-            roomListArea.setStyle("-fx-background-color: #1D2529; -fx-border-radius: 10; -fx-background-radius: 10; -fx-border-color: #374A4D;");
+            roomListArea.setStyle(
+                    "-fx-background-color: #1D2529;" +
+                    " -fx-border-radius: 10;" +
+                    " -fx-background-radius: 10;" +
+                    " -fx-border-color: #374A4D;" +
+                    "-fx-font-size: 48px"
+            );
 
             // 2) Reuse your existing input controls
             roomIdField = new TextField();

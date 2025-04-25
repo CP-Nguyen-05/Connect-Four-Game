@@ -324,7 +324,7 @@ public class RoomController {
         do {
             m = conn.receiveMessage();
             if (m.getType() == MessageType.ROOM_CANCELLED) {
-                app.showRoomScene();
+                Platform.runLater(() -> app.showRoomScene());
                 return;
             }
         } while (m.getType() != MessageType.GAME_START);
