@@ -53,7 +53,7 @@ public class ConnectFourApp extends Application {
     private shared.RegisterController registerCtrl;
     private shared.ProfileController profileCtrl;
 
-    private Scene roomScene, waitingScene, gameScene;
+    private Scene roomScene, waitingScene, gameScene, resultScene;
     private String currentRoomId;
     private TextField roomIdField;
     private Label messageLabel;   // ← pull this out
@@ -490,8 +490,8 @@ public class ConnectFourApp extends Application {
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
                         Platform.runLater(() -> {
-                            new Alert(AlertType.INFORMATION, outcome).showAndWait();
-                            showOptionMenuScene();
+                            Platform.runLater(() -> showResultScene(outcome));
+                            //showOptionMenuScene();
                         });
                         setMyTurn(false);
                         return;
@@ -502,6 +502,66 @@ public class ConnectFourApp extends Application {
             }
         }, "GameListener").start();
     }
+    private void showResultScene(String outcomeText) {
+        Label outcome = new Label(outcomeText);
+        outcome.setStyle("-fx-font-size: 36px; -fx-text-fill: #333;");
+        outcome.setAlignment(Pos.CENTER);
+
+        Button yes = new Button("Rematch");
+        Button no  = new Button("No, back to menu");
+
+        yes.setOnAction(e -> {
+            // 1) go into “waiting for opponent” UI
+            try{
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.REMATCH_REQUEST,
+                        currentRoomId,
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+                System.out.println("sended the message rematch to server");
+                roomCtrl.waitForGameStart();
+                System.out.println("rematch rejected");
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
+            }
+//            new Alert(AlertType.ERROR, "Rematch is rejected").showAndWait();
+//            showOptionMenuScene();
+        });
+
+        no.setOnAction(e -> {
+            // inform the server to tear down this room:
+            try {
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.REMATCH_REJECT,
+                        currentRoomId,
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+            }
+            catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            // then go back to the main menu:
+            showOptionMenuScene();
+        });
+
+        HBox buttons = new HBox(20, yes, no);
+        buttons.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(40, outcome, buttons);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(30));
+
+        resultScene = new Scene(root, 750, 450);
+        primaryStage.setScene(resultScene);
+    }
+
 
     private void showHowToPlayScene() {
         TextField title = new TextField("How to play");

@@ -178,6 +178,8 @@ public class RoomController {
 
     /** Quick‑join: pick the first open room, or prompt to create one. */
     public void handleQuickJoin() {
+        hostRoom = true;
+        app.setMyTurn(hostRoom);
         Optional<RoomView> open = rooms.stream()
                 .filter(RoomView::isOpen)
                 .findFirst();
@@ -246,13 +248,8 @@ public class RoomController {
             roomListArea.setDisable(true);
             roomIdField.setDisable(true);
         });
-        if (hostRoom) {
-            app.setMyTurn(true);
-            System.out.println("Host room");
-        }
-        else{
-            app.setMyTurn(false);
-        }
+        hostRoom = false;
+        app.setMyTurn(hostRoom);
 
         new Thread(() -> {
             try {
@@ -296,7 +293,7 @@ public class RoomController {
         }, "JoinRoom-Thread").start();
     }
 
-    private void waitForGameStart() throws Exception {
+    public void waitForGameStart() throws Exception {
         Message m;
         do {
             m = conn.receiveMessage();
@@ -311,6 +308,7 @@ public class RoomController {
             app.showGameScene();
         });
     }
+
 
     private void showError(String text) {
         new Alert(Alert.AlertType.ERROR, text).showAndWait();

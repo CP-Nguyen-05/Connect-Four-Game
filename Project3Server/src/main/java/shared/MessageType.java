@@ -18,6 +18,8 @@ public enum MessageType {
     MOVE,        // client → server: drop a disc in a column
     CHAT,        // client ⇄ server: chat text
     GAME_START,  // server → clients: game is beginning
+    REMATCH_REQUEST, // clients -> server: players want to rematch
+    REMATCH_REJECT, // server -> clients: one player does not want to rematch
     SURRENDER,   // client → server: I give up
     GAME_END,    // server → clients: game over
     ERROR        // server → client: error or invalid request

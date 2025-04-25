@@ -13,10 +13,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class GameSession implements Runnable {
     private final ConnectionHandler p1, p2;
     private ConnectionHandler current, other;
-    private final int[][] board = new int[6][7];
+    private int[][] board = new int[6][7];
     private final BlockingQueue<Message> inbox = new LinkedBlockingQueue<>();
     private final UserDataStore ds = new UserDataStore();
     private final Server server;
+
+    private boolean rematch1 = false;
+    private boolean rematch2 = false;
 
     public GameSession(ConnectionHandler p1, ConnectionHandler p2, Server server) {
         this.p1 = p1; this.p2 = p2; this.current = p1; this.other = p2;
@@ -61,26 +64,79 @@ public class GameSession implements Runnable {
                     ));
                     if (checkWin(row, col, pid)) {
                         endGame(current, other);
+//                        server.getRoomManager().removeRoom(current.getCurrentRoomId());
+//                        server.removeGameSession(current.getCurrentRoomId());
                         return;
                     }
                     if (isDraw()) {
                         endDraw();
+//                        server.getRoomManager().removeRoom(current.getCurrentRoomId());
+//                        server.removeGameSession(current.getCurrentRoomId());
                         return;
                     }
                     swapPlayers();
 
-                } else if (type == MessageType.CHAT) {
+                }
+                else if (type == MessageType.CHAT) {
                     // in-game chat: echo to both
                     relay(msg);
 
-                } else if (type == MessageType.SURRENDER) {
-                    endSurrender(current, other);
-                    server.getRoomManager().removeRoom(current.getCurrentRoomId());
-                    server.removeGameSession(current.getCurrentRoomId());
+                }
+                else if (type == MessageType.SURRENDER) {
+                    if (msg.getSender().equals(current.getUsername())){
+                        endGame(other, current);
+                    }
+                    else{
+                        endGame(current, other);
+                    }
+//                    server.getRoomManager().removeRoom(current.getCurrentRoomId());
+//                    server.removeGameSession(current.getCurrentRoomId());
                     return;
                 }
+                else if (type == MessageType.REMATCH_REQUEST){
+                    System.out.println("rematch request received from GameSession");
+                    if (msg.getSender().equals(p1.getUsername())) rematch1 = true;
+                    if (msg.getSender().equals(p2.getUsername())) rematch2 = true;
+
+                    if (rematch1 && rematch2) {
+                        resetBoard();
+                        rematch1 = rematch2 = false;
+                        current = p1;
+                        other   = p2;
+                        // reuse GAME_START so clients call showGameScene()
+                        for (ConnectionHandler ch : new ConnectionHandler[]{p1, p2}) {
+                            ch.sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.GAME_START,
+                                    current.getCurrentRoomId(),
+                                    "SERVER",
+                                    ch.getUsername(),
+                                    System.currentTimeMillis()
+                            ));
+                        }
+                    }
+                }
+                else if (type == MessageType.REMATCH_REJECT){
+                    for (ConnectionHandler ch : new ConnectionHandler[]{p1, p2}) {
+                        if (!ch.getUsername().equals(msg.getSender())){
+                            ch.sendMessage(new Message(
+                                    UUID.randomUUID().toString(),
+                                    MessageType.ROOM_CANCELLED,
+                                    current.getCurrentRoomId(),
+                                    "SERVER",
+                                    ch.getUsername(),
+                                    System.currentTimeMillis()
+                            ));
+                            System.out.println("send rematch rejected back to "+ch.getUsername());
+                        }
+                    }
+                    server.getRoomManager().removeRoom(current.getCurrentRoomId());
+                    server.removeGameSession(current.getCurrentRoomId());
+                }
+
             }
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             // session was cancelled
         }
         // Optionally notify ConnectionHandler to clean up room
@@ -169,6 +225,7 @@ public class GameSession implements Runnable {
             }
         }
         ds.saveUsers(users);
+        System.out.println(current.getCurrentRoomId()+ " ended game");
     }
 
     private void endDraw() {
@@ -191,26 +248,26 @@ public class GameSession implements Runnable {
             }
         }
         ds.saveUsers(users);
-    }
+        System.out.println(current.getCurrentRoomId()+ " ended game");
 
-    private void endSurrender(ConnectionHandler loser, ConnectionHandler winner) {
-        // same as a normal win/loss
-        endGame(winner, loser);
     }
 
     private void relay(Message m) {
         p1.sendMessage(m);
         p2.sendMessage(m);
     }
-
-    private Message error(String text) {
-        return new Message(
-                UUID.randomUUID().toString(),
-                MessageType.ERROR,
-                text,
-                "SERVER",
-                current.getUsername(),
-                System.currentTimeMillis()
-        );
+    private void resetBoard() {
+        board = new int[6][7];
     }
+
+//    private Message error(String text) {
+//        return new Message(
+//                UUID.randomUUID().toString(),
+//                MessageType.ERROR,
+//                text,
+//                "SERVER",
+//                current.getUsername(),
+//                System.currentTimeMillis()
+//        );
+//    }
 }

@@ -175,23 +175,41 @@ public class ConnectionHandler implements Runnable {
                 Message msg = readMessage();
                 switch (msg.getType()) {
                     case CHAT:
-//                        handleChat(msg);
-//                        break;
                         if (currentRoomId != null) {
                             GameSession gs = server.getGameSession(currentRoomId);
                             if (gs != null) {
                                 gs.handleMessage(msg);
-                                break;    // do NOT fall through to lobby broadcast
+                                break;
                             }
                         }
-                        // otherwise it’s lobby chat (or pre‐game), fall back to your existing handler
-                        //handleChat(msg);
                         break;
                     case MOVE:
                         if (currentRoomId != null) {
                             GameSession gs = server.getGameSession(currentRoomId);
                             if (gs != null) {
                                 gs.handleMessage(msg);
+                            }
+                        }
+                        break;
+                    case REMATCH_REQUEST:
+                        System.out.println("rematch request received from ConnectionHandler");
+                        if (currentRoomId != null) {
+                            GameSession gs = server.getGameSession(currentRoomId);
+                            if (gs != null) {
+                                System.out.println("rematch request received from ConnectionHandler");
+                                gs.handleMessage(msg);
+                                break;
+                            }
+                        }
+                        break;
+                    case REMATCH_REJECT:
+                        System.out.println("rematch reject received from ConnectionHandler");
+                        if (currentRoomId != null) {
+                            GameSession gs = server.getGameSession(currentRoomId);
+                            if (gs != null) {
+                                System.out.println("rematch reject received from ConnectionHandler");
+                                gs.handleMessage(msg);
+                                break;
                             }
                         }
                         break;
@@ -242,8 +260,6 @@ public class ConnectionHandler implements Runnable {
                             ));
                         }
                         return;
-                    //break;
-                    //TO DO
                     case LIST_ROOMS:
                         List<Room> rooms = server.getRoomManager().getOpenRooms();
                         // payload format example: room1|0|2|true;room2|1|2|true;room3|2|2|false
@@ -352,55 +368,6 @@ public class ConnectionHandler implements Runnable {
                         ));
                         break;
                     case SURRENDER:
-//                        String loser = msg.getSender();
-//                        roomId = msg.getContent();      // client sent the roomId
-//                        server.getRoomManager().findRoomById(roomId).ifPresent(room -> {
-//                            // figure out who won/lost
-//                            List<User> players = room.getPlayers();
-//                            User loserUser  = players.stream()
-//                                    .filter(u -> u.getUsername().equals(loser))
-//                                    .findFirst().orElse(null);
-//                            User winnerUser = players.stream()
-//                                    .filter(u -> !u.getUsername().equals(loser))
-//                                    .findFirst().orElse(null);
-//
-//                            if (loserUser != null && winnerUser != null) {
-//                                // 1) notify both clients
-//                                for (User u : players) {
-//                                    ConnectionHandler ch = server.findByUsername(u.getUsername());
-//                                    if (ch == null) continue;
-//                                    boolean youWin = u.getUsername().equals(winnerUser.getUsername());
-//                                    String result = youWin ? "YOU_WIN" : "YOU_LOSE";
-//                                    ch.sendMessage(new Message(
-//                                            UUID.randomUUID().toString(),
-//                                            MessageType.GAME_END,
-//                                            result,
-//                                            "SERVER",
-//                                            u.getUsername(),
-//                                            System.currentTimeMillis()
-//                                    ));
-//                                }
-//
-//                                // 2) persist updated stats back to players.txt
-//                                UserDataStore ds = new UserDataStore();
-//                                List<User> all = ds.loadUsers();
-//                                for (User u : all) {
-//                                    if (u.getUsername().equals(winnerUser.getUsername())) {
-//                                        u.setWinCount(   u.getWinCount()   + 1);
-//                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
-//                                    } else if (u.getUsername().equals(loserUser.getUsername())) {
-//                                        u.setLossCount(  u.getLossCount()  + 1);
-//                                        u.setGamesPlayed(u.getGamesPlayed()+ 1);
-//                                    }
-//                                }
-//                                ds.saveUsers(all);
-//
-//                                server.getRoomManager().removeRoom(roomId);
-//                                System.out.println(loser + " surrendered in " + roomId);
-//                                System.out.println(winnerUser.getUsername() + " won in "+ roomId);
-//                            }
-//                        });
-//                        break;
                         if (currentRoomId != null) {
                             GameSession gs = server.getGameSession(currentRoomId);
                             if (gs != null) {
@@ -430,28 +397,6 @@ public class ConnectionHandler implements Runnable {
 
             if (currentRoomId != null) {
                 // treat as surrender
-//                Optional<Room> o = server.getRoomManager().findRoomById(currentRoomId);
-//                if (o.isPresent()) {
-//                    Room room = o.get();
-//                    // notify the other player
-//                    for (User u : room.getPlayers()) {
-//                        if (u.getUsername().equals(username)) continue;
-//                        ConnectionHandler ch = server.findByUsername(u.getUsername());
-//                        if (ch != null) {
-//                            ch.sendMessage(new Message(
-//                                    UUID.randomUUID().toString(),
-//                                    MessageType.GAME_END,
-//                                    "YOU_WIN",
-//                                    "SERVER",
-//                                    u.getUsername(),
-//                                    System.currentTimeMillis()
-//                            ));
-//                        }
-//                    }
-//                    // remove the room so it vanishes from the lobby
-//                    server.getRoomManager().removeRoom(currentRoomId);
-//                    System.out.println(username + " disconnected, treated as surrender in " + currentRoomId);
-//                }
                 if (currentRoomId != null) {
                     GameSession gs = server.getGameSession(currentRoomId);
                     if (gs != null) {
