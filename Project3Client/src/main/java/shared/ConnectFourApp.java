@@ -516,6 +516,8 @@ public class ConnectFourApp extends Application {
             }
         }, "GameListener").start();
     }
+
+    // ONlY FOR 10s
     private void showResultScene(String outcomeText) {
         Label outcome = new Label(outcomeText);
         outcome.setStyle("-fx-font-size: 36px; -fx-text-fill: #333;");
