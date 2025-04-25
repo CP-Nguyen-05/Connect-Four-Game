@@ -643,10 +643,10 @@ public class ConnectFourApp extends Application {
                         "- Discs fall to the lowest available space in the selected column.\n\n" +
                         "- The goal is to connect four of your discs in a row:\n\n" +
                         "        - Horizontally\n\n" +
-                        "        – Vertically\n\n" +
-                        "        – Diagonally\n\n" +
-                        "– The first player to connect four wins the game.\n\n" +
-                        "– If the board is full and no one wins, it’s a draw."
+                        "        - Vertically\n\n" +
+                        "        - Diagonally\n\n" +
+                        "- The first player to connect four wins the game.\n\n" +
+                        "- If the board is full and no one wins, it’s a draw."
         );
         howTo.setEditable(false);
         howTo.setMouseTransparent(true);
@@ -664,7 +664,7 @@ public class ConnectFourApp extends Application {
         container.setPrefWidth(900);
 
 
-        Button back = new Button("Back");
+        Button back = new Button("BACK");
         back.setStyle("-fx-background-color: #1D90FF; -fx-text-fill: white; -fx-border-color: white; -fx-font-size: 24px");
         back.setPrefWidth(200);
         back.setPrefHeight(50);
