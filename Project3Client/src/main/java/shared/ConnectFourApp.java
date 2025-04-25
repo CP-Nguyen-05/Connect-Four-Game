@@ -272,7 +272,7 @@ public class ConnectFourApp extends Application {
                     messageLabel,
                     buttons
             );
-            root.setPadding(new Insets(20));
+            root.setPadding(new Insets(50));
             root.setAlignment(Pos.CENTER);
 
             roomScene = new Scene(root, 1600, 900);

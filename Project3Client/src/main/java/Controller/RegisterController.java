@@ -55,7 +55,7 @@ public class RegisterController {
         submitBtn.setMaxWidth(Double.MAX_VALUE);
 
         Button backBtn = new Button("Already have an account? Log in");
-        backBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #F98C02; -fx-underline: true; -fx-cursor: hand;");
+        backBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #F98C02; -fx-underline: false; -fx-cursor: hand;");
 
         submitBtn.setOnAction(e -> doRegister());
         backBtn.setOnAction(e -> app.showLoginScene());
@@ -121,6 +121,9 @@ public class RegisterController {
             Message reply = conn.receiveMessage();
             if (reply.getType() == MessageType.REGISTER_SUCCESS) {
                 messageLabel.setText("Registration succeeded. Please log in.");
+                if (messageLabel.getText().equals("Registration succeeded. Please log in")) {
+                    messageLabel.setStyle("-fx-text-fill: #F98C02");
+                }
                 usernameField.clear();
                 passwordField.clear();
                 confirmField.clear();

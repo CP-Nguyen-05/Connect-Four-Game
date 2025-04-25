@@ -46,7 +46,7 @@ public class LoginController {
         loginBtn.setStyle("-fx-background-color: #0087F1; -fx-text-fill: #FFF; -fx-font-weight: bold;");
 
         Button regBtn = new Button("Need an account? Sign up");
-        regBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #0087F1; -fx-underline: true; -fx-cursor: hand;");
+        regBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #0087F1; -fx-underline: false; -fx-cursor: hand;");
 
         // Message label
         messageLabel = new Label();
@@ -92,7 +92,6 @@ public class LoginController {
     private void doLogin() {
         String u = usernameField.getText().trim();
         String p = passwordField.getText();
-        usernameField.clear();
         passwordField.clear();
         if (u.isEmpty() || p.isEmpty()) {
             messageLabel.setText("Enter both username & password");
