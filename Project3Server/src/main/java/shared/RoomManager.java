@@ -13,7 +13,7 @@ public class RoomManager {
     }
     private int nextRoomNumber = 1;
     public Room createRoom() {
-        String id = "room" + nextRoomNumber++;
+        String id = "ROOM " + nextRoomNumber++;
         Room r = new Room(id, 2);
         activeRooms.add(r);
         return r;
@@ -21,7 +21,7 @@ public class RoomManager {
 
     public Optional<Room> findRoomById(String roomId) {
         return activeRooms.stream()
-                .filter(r -> r.getRoomId().equals(roomId))
+                .filter(r -> r.getRoomId().equals("ROOM " + roomId))
                 .findFirst();
     }
     public synchronized void removeRoom(String roomId) {

@@ -201,6 +201,7 @@ public class RoomController {
 
     /** Joins the room ID entered by the user. */
     public void handleJoinRoomById() {
+
         String id = roomIdField.getText().trim();
         if (id.isEmpty()) {
             messageLabel.setText("Enter a room ID.");

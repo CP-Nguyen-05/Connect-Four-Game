@@ -153,7 +153,7 @@ public class ConnectFourApp extends Application {
     }
 
     public void showOptionMenuScene() {
-        Image bgImage = new Image(getClass().getResource("/backgrounds/wallpaper_with_effect.jpg").toExternalForm());
+        Image bgImage = new Image(getClass().getResource("/backgrounds/hi.res.crt.png").toExternalForm());
 
         BackgroundImage bg = new BackgroundImage(
                 bgImage,
@@ -178,18 +178,18 @@ public class ConnectFourApp extends Application {
 
         Button lanButton = new Button("LAN PLAY");
         lanButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: white; -fx-font-weight: bold;");
-        lanButton.setPrefWidth(134);
+        lanButton.setPrefWidth(100);
         Button compButton = new Button("COMPUTER");
-        compButton.setPrefWidth(134);
-        compButton.setStyle("-fx-background-color: #008081; -fx-text-fill: white; -fx-font-weight: bold;");
+        compButton.setPrefWidth(100);
+        compButton.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;");
         Button howToPlayButton = new Button("HOW TO PLAY");
-        howToPlayButton.setPrefWidth(134);
+        howToPlayButton.setPrefWidth(100);
         howToPlayButton.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-weight: bold;");
         Button profileButton = new Button("PROFILE");
-        profileButton.setPrefWidth(134);
+        profileButton.setPrefWidth(100);
         profileButton.setStyle("-fx-background-color: #3E926F; -fx-text-fill: white; -fx-font-weight: bold;");
         Button logoutButton = new Button("LOGOUT");
-        logoutButton.setPrefWidth(134);
+        logoutButton.setPrefWidth(100);
         logoutButton.setStyle("-fx-background-color: #F24339; -fx-text-fill: white; -fx-font-weight: bold;");
 
         lanButton.setOnAction(e -> showRoomScene());
@@ -200,15 +200,14 @@ public class ConnectFourApp extends Application {
 
         VBox root = new VBox(10, lanButton, compButton, howToPlayButton, profileButton, logoutButton);
         root.setStyle(
-                "-fx-background-color: #374A4D;" +         // VBox background// Border color
-                        "-fx-border-width: 3;" +                  // Border thickness
-                        "-fx-border-radius: 20;" +                // Rounded border corners
-                        "-fx-background-radius: 20;" +              // Rounded background to match
+                "-fx-background-color: #374A4D;" +
+                        "-fx-border-width: 3;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-background-radius: 10;" +
                         "-fx-effect: dropshadow(gaussian, black, 10, 0.5, 0, 4);"
         );
-        // VBox background
         root.setAlignment(Pos.CENTER);
-        root.setMaxWidth(225);
+        root.setMaxWidth(180);
         root.setMaxHeight(250);
         root.setPrefHeight(300);
         root.setMinHeight(250);
@@ -229,10 +228,30 @@ public class ConnectFourApp extends Application {
     public void showRoomScene() {
         if (roomScene == null) {
             // 1) Create the display area
+            TextField roomTitle = new TextField("AVAILABLE ROOMS");
+            roomTitle.setFocusTraversable(false);
+            roomTitle.setEditable(false);
+            roomTitle.setStyle(
+                    "-fx-text-fill: white;"+
+                            "-fx-font-size: 64;" +
+                            "-fx-background-color: #F24339;"+
+                            "-fx-border-radius: 10;" +
+                            "-fx-background-radius: 10;" +
+                            " -fx-border-color: #374A4D;"
+            );
+            roomTitle.setMinWidth(800);
+            roomTitle.setMaxWidth(200);
+            roomTitle.setAlignment(Pos.CENTER);
+
             roomListArea = new TextArea();
             roomListArea.setEditable(false);
             roomListArea.setPrefRowCount(10);
             roomListArea.setWrapText(true);
+            roomListArea.setPrefWidth(800);
+            roomListArea.setMaxWidth(800);
+            roomListArea.setPrefHeight(500);
+            roomListArea.setMaxHeight(500);
+            roomListArea.setStyle("-fx-background-color: #1D2529; -fx-border-radius: 10; -fx-background-radius: 10; -fx-border-color: #374A4D;");
 
             // 2) Reuse your existing input controls
             roomIdField = new TextField();
@@ -240,12 +259,16 @@ public class ConnectFourApp extends Application {
 
             messageLabel   = new Label();
 
-            Button refreshBtn    = new Button("Refresh");
-            Button quickJoinBtn  = new Button("Quick Join");
-            Button joinByIdBtn   = new Button("Join By ID");
-            Button createBtn     = new Button("Create Room");
-            Button spectateBtn   = new Button("Spectate");
-            Button backBtn       = new Button("Back");
+            Button refreshButton    = new Button("REFRESH");
+            refreshButton.setStyle("-fx-background-color: #3E926F; -fx-text-fill: white; -fx-font-weight: bold;");
+            Button quickJoinButton  = new Button("QUICK JOIN");
+            quickJoinButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: white; -fx-font-weight: bold;");
+            Button joinByIdButton   = new Button("JOIN");
+            joinByIdButton.setStyle("-fx-background-color: #FF6368; -fx-text-fill: white; -fx-font-weight: bold;");
+            Button createButton     = new Button("CREATE ROOM");
+            createButton.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;");
+            Button backButton       = new Button("BACK");
+            backButton.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-weight: bold;");
 
             // 3) Instantiate controller with the plain list and text area
             roomCtrl = new RoomController(
@@ -259,29 +282,32 @@ public class ConnectFourApp extends Application {
             );
 
             // 4) Wire buttons
-            refreshBtn  .setOnAction(e -> roomCtrl.fetchAvailableRooms());
-            quickJoinBtn.setOnAction(e -> roomCtrl.handleQuickJoin());
-            joinByIdBtn .setOnAction(e -> roomCtrl.handleJoinRoomById());
-            createBtn   .setOnAction(e -> roomCtrl.handleCreateRoom());
-            spectateBtn .setOnAction(e -> roomCtrl.handleJoinAsSpectator());
-            backBtn     .setOnAction(e -> showOptionMenuScene());
+            refreshButton.setOnAction(e -> roomCtrl.fetchAvailableRooms());
+            quickJoinButton.setOnAction(e -> roomCtrl.handleQuickJoin());
+            joinByIdButton.setOnAction(e -> roomCtrl.handleJoinRoomById());
+            createButton.setOnAction(e -> roomCtrl.handleCreateRoom());
+//            spectateBtn .setOnAction(e -> roomCtrl.handleJoinAsSpectator());
+            backButton.setOnAction(e -> showOptionMenuScene());
 
-            HBox idRow   = new HBox(8, roomIdField, joinByIdBtn, spectateBtn);
-            idRow.setAlignment(Pos.CENTER);
-            HBox buttons = new HBox(10, refreshBtn, quickJoinBtn, createBtn, backBtn);
+            HBox idRow = new HBox(8, roomIdField, joinByIdButton);
+            idRow.setAlignment(Pos.CENTER_LEFT);
+            idRow.setMaxWidth(800);
+            HBox buttons = new HBox(10, refreshButton, quickJoinButton, createButton, backButton);
             buttons.setAlignment(Pos.CENTER);
 
-            VBox root = new VBox(15,
-                    new Label("Available Rooms"),
-                    roomListArea,
+            VBox root = new VBox(10,
+                    roomTitle,
                     idRow,
+                    roomListArea,
                     messageLabel,
                     buttons
             );
-            root.setPadding(new Insets(50));
+            root.setPadding(new Insets(20));
             root.setAlignment(Pos.CENTER);
+            root.setStyle("-fx-background-color: #374A4D;");
 
             roomScene = new Scene(root, 1600, 900);
+            applyGlobalStyles(roomScene);
         }
         else {
             // ** re‑enable and clear them any time you come back **
@@ -622,18 +648,22 @@ public class ConnectFourApp extends Application {
         }
     }
 
-
-
     private void showHowToPlayScene() {
-        TextField title = new TextField("How to play");
+        TextField title = new TextField("HOW TO PLAY");
         title.setMouseTransparent(true);
         title.setFocusTraversable(false);
         title.setEditable(false);  // Make it read-only
-        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 64));
-        title.setStyle("-fx-text-fill: white; -fx-background-color: #03BF9A;");
+        title.setStyle(
+                "-fx-text-fill: white;"+
+                "-fx-font-size: 64;" +
+                "-fx-background-color: #AE65FF;"+
+                "-fx-border-radius: 10;" +
+                "-fx-background-radius: 10;" +
+                " -fx-border-color: #374A4D;"
+        );
         title.setMinWidth(1000);
         title.setMaxWidth(300);
-        title.setAlignment(Pos.CENTER); // Center text horizontally
+        title.setAlignment(Pos.CENTER);
 
         HBox titleRow = new HBox(title);
         titleRow.setAlignment(Pos.CENTER);
@@ -651,13 +681,23 @@ public class ConnectFourApp extends Application {
         howTo.setEditable(false);
         howTo.setMouseTransparent(true);
         howTo.setFocusTraversable(false);
-        howTo.setFont(Font.font(globalFontFamily, 36));
         howTo.setPrefWidth(1000);
         howTo.setMaxWidth(1000);
         howTo.setPrefHeight(650);
         howTo.setMaxHeight(650);
-        howTo.setEditable(false);
-        howTo.setStyle("-fx-control-inner-background: #03BF9A; -fx-text-fill: #FFF; ");
+        howTo.setStyle(
+                "-fx-control-inner-background: #1D2529;" +
+                "-fx-background-color: #1D2529;" +
+                "-fx-border-color: #374A4D;" +
+                "-fx-border-width: 2;" +
+                "-fx-focus-color: transparent;" +
+                "-fx-faint-focus-color: transparent;" +
+                "-fx-text-fill: white;" +
+                "-fx-border-radius: 10;" +
+                "-fx-background-radius: 10;" +
+                "-fx-caret-color: transparent;" +
+                "-fx-font-size: 36px;"
+        );
 
         VBox container = new VBox(howTo);
         container.setAlignment(Pos.CENTER);
@@ -665,12 +705,12 @@ public class ConnectFourApp extends Application {
 
 
         Button back = new Button("BACK");
-        back.setStyle("-fx-background-color: #1D90FF; -fx-text-fill: white; -fx-border-color: white; -fx-font-size: 24px");
-        back.setPrefWidth(200);
-        back.setPrefHeight(50);
+        back.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-size: 36px");
+        back.setPrefWidth(120);
+        back.setPrefHeight(40);
         back.setOnAction(e -> showOptionMenuScene());
 
-        HBox buttonBox = new HBox(10, back);
+        HBox buttonBox = new HBox(back);
         buttonBox.setAlignment(Pos.CENTER);
 
         VBox root = new VBox(10, titleRow, container, buttonBox);
@@ -684,14 +724,21 @@ public class ConnectFourApp extends Application {
         primaryStage.setScene(profileCtrl.getScene());
     }
     public void showDeleteAccountConfirm() {
-        Label confirm = new Label("Are you sure you want to delete\nyour account?");
-        confirm.setStyle("-fx-font-size: 48px; -fx-text-fill: white;");
+        Label confirm = new Label("ARE YOU SURE WANT TO DELETE YOUR ACCOUNT?");
+        confirm.setStyle("-fx-font-size: 48px;" +
+                "-fx-text-fill: white;" +
+                "-fx-background-color: #1D2529"
+        );
         confirm.setWrapText(true);
+        confirm.setAlignment(Pos.CENTER);
+        confirm.setPrefWidth(1400);
 
-        Button yes = new Button("Yes");
-        yes.setStyle("-fx-font-size: 24px; -fx-text-fill: white;");
-        Button no = new Button("No");
-        no.setStyle("-fx-font-size: 24px; -fx-text-fill: white;");
+        Button yes = new Button("YES");
+        yes.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F24339;");
+        yes.setPrefWidth(80);
+        Button no = new Button("NO");
+        no.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F98C02;");
+        no.setPrefWidth(80);
 
         yes.setOnAction(e -> {
             yes.setDisable(true);
@@ -703,15 +750,28 @@ public class ConnectFourApp extends Application {
 
         no.setOnAction(e -> showProfileScene());
 
-        HBox buttons = new HBox(50, yes, no);
+        HBox buttons = new HBox(20, yes, no);
         buttons.setAlignment(Pos.CENTER);
-        VBox root = new VBox(20, confirm, buttons);
+        buttons.setStyle("-fx-background-color: #1D2529");
+        VBox innerBox = new VBox(20, confirm, buttons);
+        innerBox.setAlignment(Pos.CENTER);
+        innerBox.setPrefWidth(1000);
+        innerBox.setMaxWidth(1000);
+        innerBox.setPadding(new Insets(20));
+        innerBox.setStyle(
+                "-fx-background-color: #1D2529;" +
+                "-fx-border-color: #374A4D;" +
+                "-fx-border-radius: 10;" +
+                "-fx-background-radius: 10"
+        );
 
-        root.setPadding(new Insets(20));
+        VBox root = new VBox(innerBox);
+
         root.setAlignment(Pos.CENTER);
         root.setStyle("-fx-background-color: #374A4D;");
 
         primaryStage.setScene(new Scene(root, 1600, 900));
+        applyGlobalStyles(primaryStage.getScene());
     }
 
     public static void main(String[] args) {
