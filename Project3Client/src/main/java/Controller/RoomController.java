@@ -7,6 +7,8 @@ import shared.ClientConnection;
 import shared.ConnectFourApp;
 import Controller.RoomView;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.*;
 import java.util.*;
 import java.util.stream.*;
@@ -329,8 +331,11 @@ public class RoomController {
         do {
             m = conn.receiveMessage();
             if (m.getType() == MessageType.ROOM_CANCELLED) {
-                new Alert(Alert.AlertType.ERROR, "Opponent rejected to rematch").showAndWait();
-                app.showOptionMenuScene();
+                Platform.runLater(() -> {
+                    new Alert(AlertType.INFORMATION, "Opponent declined rematch")
+                            .showAndWait();
+                    app.showOptionMenuScene();
+                });
                 return;
             }
         } while (m.getType() != MessageType.GAME_START);
