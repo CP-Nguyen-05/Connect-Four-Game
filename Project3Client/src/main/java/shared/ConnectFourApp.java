@@ -72,6 +72,8 @@ public class ConnectFourApp extends Application {
     private final List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
 
+    private boolean singlePlayerMode = false;
+
     public void setCurrentRoomId(String id) {
         this.currentRoomId = id;
     }
@@ -183,9 +185,9 @@ public class ConnectFourApp extends Application {
         Button lanButton = new Button("LAN PLAY");
         lanButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: white; -fx-font-weight: bold;");
         lanButton.setPrefWidth(100);
-        Button compButton = new Button("COMPUTER");
-        compButton.setPrefWidth(100);
-        compButton.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;");
+        Button vsComputerBtn = new Button("COMPUTER");
+        vsComputerBtn.setPrefWidth(100);
+        vsComputerBtn.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;");
         Button howToPlayButton = new Button("HOW TO PLAY");
         howToPlayButton.setPrefWidth(100);
         howToPlayButton.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -197,12 +199,15 @@ public class ConnectFourApp extends Application {
         logoutButton.setStyle("-fx-background-color: #F24339; -fx-text-fill: white; -fx-font-weight: bold;");
 
         lanButton.setOnAction(e -> showRoomScene());
-        // compBtn.setOnAction(e -> startSinglePlayer());
+        vsComputerBtn.setOnAction(e -> {
+            singlePlayerMode = true;
+            showGameScene();
+        });
         howToPlayButton.setOnAction(e -> showHowToPlayScene());
         profileButton.setOnAction(e -> showProfileScene());
         logoutButton.setOnAction(e -> logout());
 
-        VBox root = new VBox(10, lanButton, compButton, howToPlayButton, profileButton, logoutButton);
+        VBox root = new VBox(10, lanButton, vsComputerBtn, howToPlayButton, profileButton, logoutButton);
         root.setStyle(
                 "-fx-background-color: #374A4D;" +
                         "-fx-border-width: 3;" +
@@ -415,6 +420,8 @@ public class ConnectFourApp extends Application {
         statusField.setPrefWidth(120);
         statusField.setText(myTurn ? "Your turn!" : "Opponent…");
 
+        final boolean isSingle = singlePlayerMode;
+
         Button dropBtn = new Button("Drop");
         dropBtn.setDisable(!myTurn);  // only clickable when it's your turn
 
@@ -565,7 +572,7 @@ public class ConnectFourApp extends Application {
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
                         else if ("YOU_LOSE".equals(msg.getContent())) {
-                            outcome = "YOU LOSE";
+                            outcome = "YOU LOSE!";
                             currentUser.setScore(currentUser.getScore()-10);
                             if (currentUser.getScore()<0){
                                 currentUser.setScore(currentUser.getScore()*0);
@@ -601,7 +608,13 @@ public class ConnectFourApp extends Application {
         outcome.setWrapText(true);
         outcome.setPrefWidth(1400);
 
-
+        int seconds=0;
+        if (outcomeText.equals("YOU WIN!")) {
+            seconds = 14;
+        }
+        else if (outcomeText.equals("YOU LOSE!")) {
+            seconds = 15;
+        }
         // Create the two action buttons
         Button button1 = new Button("REMATCH");
         button1.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F24339;");
@@ -615,7 +628,7 @@ public class ConnectFourApp extends Application {
         countdownLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: #0087F1;");
 
         // Property holding the remaining seconds with an initial value of 15
-        final IntegerProperty timeSeconds = new SimpleIntegerProperty(15);
+        final IntegerProperty timeSeconds = new SimpleIntegerProperty(seconds);
         // Bind the countdown label's text so it updates automatically
         countdownLabel.textProperty().bind(Bindings.concat("GO BACK MENU AFTER ", timeSeconds.asString(), " SECONDS"));
 
@@ -626,10 +639,10 @@ public class ConnectFourApp extends Application {
                 timeSeconds.set(currentTime - 1);
             }
         }));
-        countdownTimeline.setCycleCount(20);
+        countdownTimeline.setCycleCount(seconds);
 
         // Timeline to auto-select "No, back to menu" after 15 seconds
-        Timeline autoTransitionTimeline = new Timeline(new KeyFrame(Duration.seconds(15), event -> {
+        Timeline autoTransitionTimeline = new Timeline(new KeyFrame(Duration.seconds(seconds), event -> {
             System.out.println("15 seconds elapsed. Auto-selecting 'No, back to menu'.");
             try {
                 conn.sendMessage(new Message(
@@ -645,7 +658,7 @@ public class ConnectFourApp extends Application {
             }
             showOptionMenuScene();
         }));
-        autoTransitionTimeline.setCycleCount(1);
+        autoTransitionTimeline.setCycleCount(seconds);
 
         // "Rematch" button action
         button1.setOnAction(e -> {
