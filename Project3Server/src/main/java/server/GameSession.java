@@ -79,8 +79,6 @@ public class GameSession implements Runnable {
                 // wait until one rejects or both accept
                 while (!Thread.currentThread().isInterrupted()) {
                     if (rematchP1 && rematchP2) {
-                        System.out.println(p1.getUsername()+ " p1");
-                        System.out.println(p2.getUsername()+ " p2");
                         ConnectionHandler temp = p1;
                         p1 = p2;
                         p2 = temp;
@@ -121,20 +119,6 @@ public class GameSession implements Runnable {
                     int pid = current == p1 ? 1 : 2;
                     int row = dropDisc(col, pid);
                     if (row < 0) {
-//                        Message invalidMove = new Message(
-//                                UUID.randomUUID().toString(),
-//                                MessageType.MOVE,
-//                                "Column is full",
-//                                current.getUsername(),
-//                                null,
-//                                System.currentTimeMillis()
-//                        );
-//                        if (msg.getSender().equals(current.getUsername())){
-//                            current.sendMessage(invalidMove);
-//                        }
-//                        else{
-//                            other.sendMessage(invalidMove);
-//                        }
                         current.sendMessage(error("That column is full."));
                         break;
                     }
@@ -220,6 +204,8 @@ public class GameSession implements Runnable {
     }
 
     private void endGame(ConnectionHandler win, ConnectionHandler lose) {
+        System.out.println(win.getUsername()+ " won game in "+ roomId);
+        System.out.println("Game over in "+ roomId);
         win.sendMessage(new Message(
                 UUID.randomUUID().toString(),
                 MessageType.GAME_END,

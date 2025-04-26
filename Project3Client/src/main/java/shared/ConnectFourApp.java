@@ -74,7 +74,10 @@ public class ConnectFourApp extends Application {
     private final List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
 
+    private boolean gameOver = false;
+
     private boolean singlePlayerMode = false;
+    private PauseTransition aiPause;
 
     public void setCurrentRoomId(String id) {
         this.currentRoomId = id;
@@ -200,8 +203,14 @@ public class ConnectFourApp extends Application {
         logoutButton.setPrefWidth(100);
         logoutButton.setStyle("-fx-background-color: #F24339; -fx-text-fill: white; -fx-font-weight: bold;");
 
-        lanButton.setOnAction(e -> showRoomScene());
+        lanButton.setOnAction(e -> {
+            gameOver = false;
+            singlePlayerMode = false;
+            showRoomScene();
+        });
+
         vsComputerBtn.setOnAction(e -> {
+            gameOver = false;
             singlePlayerMode = true;
             setMyTurn(true);         // ← give the human the first turn
             showGameScene();
@@ -238,6 +247,8 @@ public class ConnectFourApp extends Application {
     }
 
     public void showRoomScene() {
+        singlePlayerMode = false;
+        gameOver         = false;
         if (roomScene == null) {
             // 1) Create the display area
             TextField roomTitle = new TextField("AVAILABLE ROOMS");
@@ -405,21 +416,6 @@ public class ConnectFourApp extends Application {
         board.setVgap(5);
         board.setPadding(new Insets(10));
         Circle[][] cells = new Circle[6][7];
-//        for (int row = 0; row < 6; row++) {
-//            for (int col = 0; col < 7; col++) {
-//                Circle cell = new Circle(20, Color.LIGHTGRAY);
-//                cell.setStroke(Color.DARKGRAY);
-//                cells[row][col] = cell;
-//                board.add(cell, col, row);
-//            }
-//        }
-
-
-
-        // 2) Turn input UI + status field
-        TextField colField = new TextField();
-        colField.setPromptText("0–6");
-        colField.setPrefWidth(50);
 
         statusField = new TextField();
         statusField.setEditable(false);
@@ -438,22 +434,33 @@ public class ConnectFourApp extends Application {
                     if (!myTurn) return;
                     for (int r = 0; r < 6; r++) {
                         Circle c = cells[r][column];
-                        c.setStroke(Color.GOLD);
-                        c.setStrokeWidth(3);
+                        // only color the empty slots
+                        if (c.getFill().equals(Color.LIGHTGRAY)) {
+                            c.setFill(Color.BLACK);
+                        }
                     }
                 });
-                // 3) Hover exit: un‐highlight
+
                 cell.setOnMouseExited(e -> {
+                    if (!myTurn) return;
                     for (int r = 0; r < 6; r++) {
                         Circle c = cells[r][column];
-                        c.setStroke(Color.DARKGRAY);
-                        c.setStrokeWidth(1);
+                        // restore only those we painted black
+                        if (c.getFill().equals(Color.BLACK)) {
+                            c.setFill(Color.LIGHTGRAY);
+                        }
                     }
                 });
 
                 cell.setOnMouseClicked(e -> {
-                    if (!myTurn) return;
-
+                    for (int r = 0; r < 6; r++) {
+                        Circle c = cells[r][column];
+                        // restore only those we painted black
+                        if (c.getFill().equals(Color.BLACK)) {
+                            c.setFill(Color.LIGHTGRAY);
+                        }
+                    }
+                    if (!myTurn || gameOver) return;
                     if (isSingle) {
                         handleLocalMove(column, cells);
                     } else {
@@ -479,39 +486,9 @@ public class ConnectFourApp extends Application {
             }
         }
 
-        Button dropBtn = new Button("Drop");
-//        dropBtn.setDisable(!myTurn);  // only clickable when it's your turn
-//
-//        // only enable when a valid 0–6 is entered
-//        colField.textProperty().addListener((obs, o, n) -> {
-//            try {
-//                int c = Integer.parseInt(n.trim());
-//                dropBtn.setDisable(! (myTurn && c >= 0 && c <= 6));
-//            } catch (Exception ex) {
-//                dropBtn.setDisable(true);
-//            }
-//        });
-//
-//        dropBtn.setOnAction(e -> {
-//            String txt = colField.getText().trim();
-//            try {
-//                conn.sendMessage(new Message(
-//                        UUID.randomUUID().toString(),
-//                        MessageType.MOVE,
-//                        txt,
-//                        currentUser.getUsername(),
-//                        null,
-//                        System.currentTimeMillis()
-//                ));
-//            } catch (IOException ex) {
-//                ex.printStackTrace();
-//            }
-//            colField.clear();
-//        });
 
-        HBox inputRow = new HBox(10,
-                new Label("Column:"), colField, dropBtn, statusField
-        );
+
+        HBox inputRow = new HBox(10, statusField);
         inputRow.setAlignment(Pos.CENTER);
 
         // 3) Chat panel (unchanged)
@@ -592,9 +569,9 @@ public class ConnectFourApp extends Application {
                         if (t == MessageType.ERROR) {
                             // show the alert, then put control back to the user
                             Platform.runLater(() -> {
-                                new Alert(AlertType.ERROR, msg.getContent()).showAndWait();
+                                new Alert(AlertType.WARNING, msg.getContent()).showAndWait();
                                 // it must still be your turn, so re-enable the drop controls:
-                                dropBtn.setDisable(false);
+                                myTurn = true;
                                 statusField.setText("Your turn!");
                             });
                         } else if (t == MessageType.MOVE) {
@@ -611,11 +588,9 @@ public class ConnectFourApp extends Application {
                                 myTurn = true;
                                 Platform.runLater(() -> {
                                     statusField.setText("Your turn!");
-                                    dropBtn.setDisable(false);
                                 });
                             } else {
                                 statusField.setText("Opponent…");
-                                dropBtn.setDisable(true);
                             }
                         } else if (t == MessageType.CHAT) {
                             Platform.runLater(() ->
@@ -638,7 +613,7 @@ public class ConnectFourApp extends Application {
                                 currentUser.setLossCount(currentUser.getLossCount() + 1);
                                 currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                             } else {
-                                outcome = "Draw!";
+                                outcome = "DRAW!";
                                 currentUser.setScore(currentUser.getScore() + 5);
                                 currentUser.setScore(currentUser.getScore());
                                 currentUser.setDrawCount(currentUser.getDrawCount() + 1);
@@ -660,37 +635,61 @@ public class ConnectFourApp extends Application {
 
     /** Drops human piece, checks win, then AI move and checks win. */
     private void handleLocalMove(int column, Circle[][] cells) {
-        myTurn = false;
-        statusField.setText("Opponent…");
-        int row = findDropRow(column, cells);
-        if (row < 0) return;
-
-        // paint human disc
-        cells[row][column].setFill(Color.BLUE);
-        if (checkWin(cells, row, column, Color.BLUE)) {
-            showResultPopUp("YOU WIN!");
+        if (gameOver){
+            singlePlayerMode=false;
             return;
         }
 
-        // AI move
-        PauseTransition pause = new PauseTransition(Duration.seconds(1));
-        pause.setOnFinished(evt -> {
-            // pick & drop AI disc
+        // 1) human drop
+        int row = findDropRow(column, cells);
+        if (row < 0) {
+            new Alert(AlertType.WARNING, "That column is full!").showAndWait();
+            return;
+        }
+        cells[row][column].setFill(Color.BLUE);
+        if (checkWin(cells, row, column, Color.BLUE)) {
+            gameOver = true;
+            showResultPopUp("YOU WIN!");
+            singlePlayerMode=false;
+            return;
+        }
+        // **draw?**
+        if (isDraw(cells)) {
+            gameOver = true;
+            showResultPopUp("Draw!");
+            singlePlayerMode=false;
+            return;
+        }
+
+        myTurn = false;
+        statusField.setText("Opponent…");
+        if (aiPause != null) aiPause.stop();
+
+        // 2) AI move after delay
+        aiPause = new PauseTransition(Duration.seconds(1));
+        aiPause.setOnFinished(evt -> {
             int aiCol = pickRandomColumn(cells);
             int aiRow = findDropRow(aiCol, cells);
             cells[aiRow][aiCol].setFill(Color.RED);
 
-            // check for AI win
             if (checkWin(cells, aiRow, aiCol, Color.RED)) {
-                showResultPopUp("YOU LOSE!");
+                gameOver = true;
+                Platform.runLater(() -> showResultPopUp("YOU LOSE!"));
+                singlePlayerMode=false;
+                return;
+            }
+            // **draw?**
+            if (isDraw(cells)) {
+                gameOver = true;
+                Platform.runLater(() -> showResultPopUp("DRAW!"));
+                singlePlayerMode=false;
                 return;
             }
 
-            // 4) back to your turn
             myTurn = true;
             statusField.setText("Your turn!");
         });
-        pause.play();
+        aiPause.play();
     }
 
     private int findDropRow(int col, Circle[][] cells) {
@@ -740,6 +739,13 @@ public class ConnectFourApp extends Application {
         }
         return cnt;
     }
+    /** true when there are no more valid drops left */
+    private boolean isDraw(Circle[][] cells) {
+        for (int c = 0; c < cells[0].length; c++) {
+            if (findDropRow(c, cells) >= 0) return false;
+        }
+        return true;
+    }
 
     // ONlY FOR 15s
     private void showResultScene(String outcomeText) {
@@ -751,19 +757,25 @@ public class ConnectFourApp extends Application {
         outcome.setPrefWidth(1400);
 
         int seconds=0;
-        if (outcomeText.equals("YOU WIN!")) {
+        if (singlePlayerMode) {
+            seconds=5;
+        }
+        else if (outcomeText.equals("YOU WIN!")) {
             seconds = 14;
         }
         else if (outcomeText.equals("YOU LOSE!")) {
             seconds = 15;
         }
+        else if (outcomeText.equals("DRAW!")) {
+            seconds = 30;
+        }
         // Create the two action buttons
-        Button button1 = new Button("REMATCH");
-        button1.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F24339;");
-        button1.setPrefWidth(100);
-        Button button2  = new Button("MENU");
-        button2.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F98C02;");
-        button2.setPrefWidth(100);
+        Button rematchButton = new Button("REMATCH");
+        rematchButton.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F24339;");
+        rematchButton.setPrefWidth(100);
+        Button menuButton  = new Button("MENU");
+        menuButton.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F98C02;");
+        menuButton.setPrefWidth(100);
 
         // Create a label to show the countdown timer
         Label countdownLabel = new Label();
@@ -774,87 +786,8 @@ public class ConnectFourApp extends Application {
         // Bind the countdown label's text so it updates automatically
         countdownLabel.textProperty().bind(Bindings.concat("GO BACK MENU AFTER ", timeSeconds.asString(), " SECONDS"));
 
-        // Timeline to update the countdown label every second
-        Timeline countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-            int currentTime = timeSeconds.get();
-            if (currentTime > 0) {
-                timeSeconds.set(currentTime - 1);
-            }
-        }));
-        countdownTimeline.setCycleCount(seconds);
-
-        // Timeline to auto-select "No, back to menu" after 15 seconds
-        Timeline autoTransitionTimeline = new Timeline(new KeyFrame(Duration.seconds(seconds), event -> {
-            System.out.println("15 seconds elapsed. Auto-selecting 'No, back to menu'.");
-            try {
-                conn.sendMessage(new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.REMATCH_REJECT,
-                        currentRoomId,
-                        currentUser.getUsername(),
-                        null,
-                        System.currentTimeMillis()
-                ));
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            showOptionMenuScene();
-        }));
-        autoTransitionTimeline.setCycleCount(seconds);
-
-        // "Rematch" button action
-        button1.setOnAction(e -> {
-            // Stop the auto-transition and countdown timers if the user responds
-            autoTransitionTimeline.stop();
-            countdownTimeline.stop();
-            try {
-                conn.sendMessage(new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.REMATCH_REQUEST,
-                        currentRoomId,
-                        currentUser.getUsername(),
-                        null,
-                        System.currentTimeMillis()
-                ));
-                System.out.println(currentRoomId + " sent the rematch request to server");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                return;
-            }
-            // Show waiting scene immediately
-            showWaitingScene();
-            // Spin off the waiting process in a new thread
-            new Thread(() -> {
-                try {
-                    roomCtrl.waitForGameRematch();   // blocks until the server replies
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    Platform.runLater(() -> showOptionMenuScene());
-                }
-            }, "Rematch-Wait-Thread").start();
-        });
-
-        // "No, back to menu" button action
-        button2.setOnAction(e -> {
-            autoTransitionTimeline.stop();
-            countdownTimeline.stop();
-            try {
-                conn.sendMessage(new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.REMATCH_REJECT,
-                        currentRoomId,
-                        currentUser.getUsername(),
-                        null,
-                        System.currentTimeMillis()
-                ));
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            showOptionMenuScene();
-        });
-
         // Layout the buttons in an HBox
-        HBox buttons = new HBox(20, button1, button2);
+        HBox buttons = new HBox(20, rematchButton, menuButton);
         buttons.setAlignment(Pos.CENTER);
 
         VBox innerBox = new VBox(20, outcome, countdownLabel, buttons);
@@ -879,9 +812,108 @@ public class ConnectFourApp extends Application {
         primaryStage.setScene(resultScene);
         applyGlobalStyles(primaryStage.getScene());
 
-        // Start the countdown and auto-transition timers
-        countdownTimeline.play();
-        autoTransitionTimeline.play();
+
+        if (singlePlayerMode){
+            // 2a) live countdown
+            Timeline countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+                if (timeSeconds.get() > 0) timeSeconds.set(timeSeconds.get() - 1);
+            }));
+            countdown.setCycleCount(seconds);
+            countdown.play();
+
+            // 2b) auto-back
+            PauseTransition autoBack = new PauseTransition(Duration.seconds(seconds));
+            autoBack.setOnFinished(e -> showOptionMenuScene());
+            autoBack.play();
+
+            rematchButton.setOnAction(e -> {
+                if (aiPause != null) aiPause.stop();
+                autoBack.stop();
+                countdown.stop();
+                gameOver = false;
+                singlePlayerMode = true;
+                setMyTurn(true);
+                showGameScene();
+            });
+            menuButton.setOnAction(e -> {
+                autoBack.stop();
+                countdown.stop();
+                showOptionMenuScene();
+            });
+
+        }
+        else{
+            // 3a) live countdown
+            Timeline countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+                if (timeSeconds.get() > 0) timeSeconds.set(timeSeconds.get() - 1);
+            }));
+            countdown.setCycleCount(seconds);
+
+            // 3b) auto-reject exactly once
+            Timeline autoReject = new Timeline(new KeyFrame(Duration.seconds(seconds), e -> {
+                try {
+                    conn.sendMessage(new Message(
+                            UUID.randomUUID().toString(),
+                            MessageType.REMATCH_REJECT,
+                            currentRoomId,
+                            currentUser.getUsername(),
+                            null,
+                            System.currentTimeMillis()
+                    ));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                showOptionMenuScene();
+            }));
+            autoReject.setCycleCount(1);
+
+            rematchButton.setOnAction(e -> {
+                countdown.stop();
+                autoReject.stop();
+                try {
+                    conn.sendMessage(new Message(
+                            UUID.randomUUID().toString(),
+                            MessageType.REMATCH_REQUEST,
+                            currentRoomId,
+                            currentUser.getUsername(),
+                            null,
+                            System.currentTimeMillis()
+                    ));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                showWaitingScene();
+                new Thread(() -> {
+                    try {
+                        roomCtrl.waitForGameRematch();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        Platform.runLater(this::showOptionMenuScene);
+                    }
+                }).start();
+            });
+
+            menuButton.setOnAction(e -> {
+                countdown.stop();
+                autoReject.stop();
+                try {
+                    conn.sendMessage(new Message(
+                            UUID.randomUUID().toString(),
+                            MessageType.REMATCH_REJECT,
+                            currentRoomId,
+                            currentUser.getUsername(),
+                            null,
+                            System.currentTimeMillis()
+                    ));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                showOptionMenuScene();
+            });
+
+            countdown.play();
+            autoReject.play();
+        }
     }
 
 
