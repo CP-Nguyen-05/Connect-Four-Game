@@ -233,9 +233,14 @@ public class GameSession implements Runnable {
         List<User> all = ds.loadUsers();
         for (User u : all) {
             if (u.getUsername().equals(win.getUsername())) {
+                u.setScore(u.getScore()+10);
                 u.setWinCount(u.getWinCount()+1);
                 u.setGamesPlayed(u.getGamesPlayed()+1);
             } else if (u.getUsername().equals(lose.getUsername())) {
+                u.setScore(u.getScore()-10);
+                if (u.getScore()<0){
+                    u.setScore(u.getScore()*0);
+                }
                 u.setLossCount(u.getLossCount()+1);
                 u.setGamesPlayed(u.getGamesPlayed()+1);
             }
@@ -257,6 +262,7 @@ public class GameSession implements Runnable {
         for (User u: all) {
             if (u.getUsername().equals(p1.getUsername()) ||
                     u.getUsername().equals(p2.getUsername())) {
+                u.setScore(u.getScore()+5);
                 u.setDrawCount(u.getDrawCount()+1);
                 u.setGamesPlayed(u.getGamesPlayed()+1);
             }

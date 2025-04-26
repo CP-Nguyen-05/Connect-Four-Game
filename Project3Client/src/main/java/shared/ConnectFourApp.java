@@ -545,6 +545,10 @@ public class ConnectFourApp extends Application {
                                 dropBtn.setDisable(false);
                             });
                         }
+                        else{
+                            statusField.setText("Opponent…");
+                            dropBtn.setDisable(true);
+                        }
                     }
                     else if (t == MessageType.CHAT) {
                         Platform.runLater(() ->
@@ -562,21 +566,22 @@ public class ConnectFourApp extends Application {
                         }
                         else if ("YOU_LOSE".equals(msg.getContent())) {
                             outcome = "YOU LOSE";
-                            if (currentUser.getScore()>0){
-                                currentUser.setScore(currentUser.getScore()-10);
+                            currentUser.setScore(currentUser.getScore()-10);
+                            if (currentUser.getScore()<0){
+                                currentUser.setScore(currentUser.getScore()*0);
                             }
                             currentUser.setLossCount(currentUser.getLossCount() + 1);
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
                         else{
                             outcome = "Draw!";
+                            currentUser.setScore(currentUser.getScore()+5);
                             currentUser.setScore(currentUser.getScore());
                             currentUser.setDrawCount(currentUser.getDrawCount() + 1);
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
                         Platform.runLater(() -> {
                             Platform.runLater(() -> showResultPopUp(outcome));
-                            //showOptionMenuScene();
                         });
                         return;
                     }
