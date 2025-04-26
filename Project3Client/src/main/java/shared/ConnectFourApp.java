@@ -32,7 +32,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar;
-import java.net.SocketTimeoutException;
 import javafx.scene.control.ProgressIndicator;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -278,16 +277,24 @@ public class ConnectFourApp extends Application {
 
             messageLabel   = new Label();
 
-            Button refreshButton    = new Button("REFRESH");
-            refreshButton.setStyle("-fx-background-color: #3E926F; -fx-text-fill: white; -fx-font-weight: bold;");
-            Button quickJoinButton  = new Button("QUICK JOIN");
-            quickJoinButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: white; -fx-font-weight: bold;");
-            Button joinByIdButton   = new Button("JOIN");
-            joinByIdButton.setStyle("-fx-background-color: #FF6368; -fx-text-fill: white; -fx-font-weight: bold;");
-            Button createButton     = new Button("CREATE ROOM");
-            createButton.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;");
-            Button backButton       = new Button("BACK");
-            backButton.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-weight: bold;");
+            Button refreshButton = new Button("REFRESH");
+            refreshButton.setStyle("-fx-background-color: #3E926F; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 36px");
+            refreshButton.setPrefWidth(190);
+            refreshButton.setPrefHeight(40);
+            Button quickJoinButton = new Button("QUICK JOIN");
+            quickJoinButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: white; -fx-font-weight: bold;  -fx-font-size: 36px");
+            quickJoinButton.setPrefWidth(190);
+            quickJoinButton.setPrefHeight(40);
+            Button joinByIdButton = new Button("JOIN");
+            joinByIdButton.setStyle("-fx-background-color: #FF6368; -fx-text-fill: white; -fx-font-weight: bold;  -fx-font-size: 24px");
+            Button createButton = new Button("CREATE");
+            createButton.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;  -fx-font-size: 36px");
+            createButton.setPrefWidth(190);
+            createButton.setPrefHeight(40);
+            Button backButton  = new Button("BACK");
+            backButton.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 36px");
+            backButton.setPrefWidth(190);
+            backButton.setPrefHeight(40);
 
             // 3) Instantiate controller with the plain list and text area
             roomCtrl = new RoomController(
@@ -480,7 +487,7 @@ public class ConnectFourApp extends Application {
         HBox root = new HBox(20, leftPane, chatPane);
         root.setPadding(new Insets(10));
 
-        gameScene = new Scene(root, 750, 450);
+        gameScene = new Scene(root, 1600, 900);
         primaryStage.setScene(gameScene);
         primaryStage.show();
 

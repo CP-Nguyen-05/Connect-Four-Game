@@ -435,58 +435,6 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-//    private void handleChat(Message msg) {
-//        String target = msg.getRecipient();
-//
-//        // 1) Private message (PM)
-//        if (target != null && !target.isEmpty()) {
-//            // can’t PM yourself
-//            if (target.equals(username)) {
-//                sendMessage(new Message(
-//                        UUID.randomUUID().toString(),
-//                        MessageType.ERROR,
-//                        "You cannot send a private message to yourself.",
-//                        "SERVER",
-//                        username,
-//                        System.currentTimeMillis()
-//                ));
-//                return;
-//            }
-//
-//            ConnectionHandler recipientHandler = server.findByUsername(target);
-//            if (recipientHandler != null) {
-//                // deliver to recipient and echo to sender
-//                recipientHandler.sendMessage(msg);
-//                sendMessage(msg);
-//            } else {
-//                sendMessage(new Message(
-//                        UUID.randomUUID().toString(),
-//                        MessageType.ERROR,
-//                        "User \"" + target + "\" does not exist.",
-//                        "SERVER",
-//                        username,
-//                        System.currentTimeMillis()
-//                ));
-//            }
-//            return;
-//        }
-//
-//        // 2) No recipient → either lobby chat or in‑game chat
-//        else if (currentRoomId != null) {
-//            // room chat: only send to handlers in the same room
-//            server.getRoomManager()
-//                    .findRoomById(currentRoomId)
-//                    .ifPresent(room -> {
-//                        for (User u : room.getPlayers()) {
-//                            ConnectionHandler ch = server.findByUsername(u.getUsername());
-//                            if (ch != null) ch.sendMessage(msg);
-//                        }
-//                    });
-//        } else {
-//            // still in the lobby
-//            server.broadcast(msg);
-//        }
-//    }
     private void roomJoinAndStartSession(Message msg) throws IOException {
         String roomId = msg.getContent();
         Optional<Room> opt = server.getRoomManager().findRoomById(roomId);
