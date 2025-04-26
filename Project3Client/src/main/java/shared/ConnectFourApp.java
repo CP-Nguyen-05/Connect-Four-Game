@@ -350,19 +350,40 @@ public class ConnectFourApp extends Application {
 
     public void showWaitingScene() {
         if (waitingScene == null) {
-            Label lbl = new Label("Waiting for an opponent to join…");
-            lbl.setWrapText(true);
+            Label title = new Label("Waiting for an opponent to join…");
+            title.setAlignment(Pos.CENTER);
+            title.setStyle("-fx-font-size: 48px; -fx-text-fill: #FFF; -fx-background-color: #1D2529;");
+            title.setWrapText(true);
             ProgressIndicator spinner = new ProgressIndicator();
 
-            Button cancel = new Button("Cancel");
-            cancel.setOnAction(e -> roomCtrl.cancelCreateRoom());
+            Button backButton = new Button("BACK");
+            backButton.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F98C02;");
+            backButton.setPrefWidth(80);
+            backButton.setOnAction(e -> roomCtrl.cancelCreateRoom());
 
-            VBox root = new VBox(20, spinner, lbl, cancel);
+            VBox card = new VBox(20, spinner, title, backButton);
+            card.setAlignment(Pos.CENTER);
+            card.setMaxWidth(1400);
+            card.setPadding(new Insets(20));
+            card.setStyle(
+                    "-fx-background-color: #1D2529;" +
+                    "-fx-background-radius: 10;" +
+                    "-fx-border-radius: 10;" +
+                    "-fx-border-color: #374A4D;" +
+                    "-fx-font-size: 48px;" +
+                    "-fx-border-width: 2;" +
+                    "-fx-text-fill: #FFF"
+            );
+
+            VBox root = new VBox(card);
             root.setAlignment(Pos.CENTER);
-            root.setPadding(new Insets(30));
+            root.setStyle("-fx-background-color: #374A4D;");
+
+            root.setStyle("-fx-background-color: #374A4D;");
             waitingScene = new Scene(root, 1600, 900);
         }
         primaryStage.setScene(waitingScene);
+        applyGlobalStyles(primaryStage.getScene());
     }
 
 
@@ -534,13 +555,13 @@ public class ConnectFourApp extends Application {
                         setMyTurn(false);
                         final String outcome;
                         if ("YOU_WIN".equals(msg.getContent())) {
-                            outcome = "You won!";
+                            outcome = "YOU WIN!";
                             currentUser.setScore(currentUser.getScore()+10);
                             currentUser.setWinCount(currentUser.getWinCount() + 1);
                             currentUser.setGamesPlayed(currentUser.getGamesPlayed() + 1);
                         }
                         else if ("YOU_LOSE".equals(msg.getContent())) {
-                            outcome = "You lost!";
+                            outcome = "YOU LOSE";
                             if (currentUser.getScore()>0){
                                 currentUser.setScore(currentUser.getScore()-10);
                             }
@@ -570,21 +591,28 @@ public class ConnectFourApp extends Application {
     private void showResultScene(String outcomeText) {
         // Outcome message label
         Label outcome = new Label(outcomeText);
-        outcome.setStyle("-fx-font-size: 36px; -fx-text-fill: #333;");
+        outcome.setStyle("-fx-font-size: 48px; -fx-text-fill: #FFF; -fx-background-color: #1D2529");
         outcome.setAlignment(Pos.CENTER);
+        outcome.setWrapText(true);
+        outcome.setPrefWidth(1400);
+
 
         // Create the two action buttons
-        Button yes = new Button("Rematch");
-        Button no  = new Button("No, back to menu");
+        Button button1 = new Button("REMATCH");
+        button1.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F24339;");
+        button1.setPrefWidth(100);
+        Button button2  = new Button("MENU");
+        button2.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-background-color: #F98C02;");
+        button2.setPrefWidth(100);
 
         // Create a label to show the countdown timer
         Label countdownLabel = new Label();
-        countdownLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #666;");
+        countdownLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: #0087F1;");
 
         // Property holding the remaining seconds with an initial value of 15
         final IntegerProperty timeSeconds = new SimpleIntegerProperty(15);
         // Bind the countdown label's text so it updates automatically
-        countdownLabel.textProperty().bind(Bindings.concat("Auto default in: ", timeSeconds.asString(), " seconds"));
+        countdownLabel.textProperty().bind(Bindings.concat("GO BACK MENU AFTER ", timeSeconds.asString(), " SECONDS"));
 
         // Timeline to update the countdown label every second
         Timeline countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
@@ -615,7 +643,7 @@ public class ConnectFourApp extends Application {
         autoTransitionTimeline.setCycleCount(1);
 
         // "Rematch" button action
-        yes.setOnAction(e -> {
+        button1.setOnAction(e -> {
             // Stop the auto-transition and countdown timers if the user responds
             autoTransitionTimeline.stop();
             countdownTimeline.stop();
@@ -647,7 +675,7 @@ public class ConnectFourApp extends Application {
         });
 
         // "No, back to menu" button action
-        no.setOnAction(e -> {
+        button2.setOnAction(e -> {
             autoTransitionTimeline.stop();
             countdownTimeline.stop();
             try {
@@ -666,17 +694,30 @@ public class ConnectFourApp extends Application {
         });
 
         // Layout the buttons in an HBox
-        HBox buttons = new HBox(20, yes, no);
+        HBox buttons = new HBox(20, button1, button2);
         buttons.setAlignment(Pos.CENTER);
 
+        VBox innerBox = new VBox(20, outcome, countdownLabel, buttons);
+        innerBox.setAlignment(Pos.CENTER);
+        innerBox.setPrefWidth(1000);
+        innerBox.setMaxWidth(1000);
+        innerBox.setPadding(new Insets(20));
+        innerBox.setStyle(
+                "-fx-background-color: #1D2529;" +
+                        "-fx-border-color: #374A4D;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-background-radius: 10"
+        );
+
         // VBox holds the outcome label, buttons, and countdown label
-        VBox root = new VBox(40, outcome, buttons, countdownLabel);
+        VBox root = new VBox(innerBox);
         root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(30));
+        root.setStyle("-fx-background-color: #374A4D;");
 
         // Create the scene and show it in the primary stage
-        resultScene = new Scene(root, 750, 450);
+        resultScene = new Scene(root, 1600, 900);
         primaryStage.setScene(resultScene);
+        applyGlobalStyles(primaryStage.getScene());
 
         // Start the countdown and auto-transition timers
         countdownTimeline.play();
@@ -689,11 +730,11 @@ public class ConnectFourApp extends Application {
     private void showResultPopUp(String outcomeText) {
         // Create an informational Alert dialog
         Alert dialog = new Alert(Alert.AlertType.INFORMATION);
-        dialog.setTitle("End Game!");
+        dialog.setTitle("Result");
         dialog.setHeaderText(null);
         dialog.setContentText(outcomeText);
 
-        // Set custom "Next" button
+        // Set a custom "Next" button
         ButtonType nextBtn = new ButtonType("Next", ButtonBar.ButtonData.OK_DONE);
         dialog.getButtonTypes().setAll(nextBtn);
 

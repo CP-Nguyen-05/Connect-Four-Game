@@ -191,9 +191,30 @@ public class RoomController {
         } else {
             Platform.runLater(() -> {
                 Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-                confirm.setTitle("No Open Rooms");
-                confirm.setHeaderText("No rooms available");
-                confirm.setContentText("Would you like to create a new room instead?");
+                confirm.setTitle("Announcement");
+                confirm.setHeaderText("NO ROOM AVAILABLE");
+                confirm.setContentText("CREATE A NEW ROOM?");
+
+                DialogPane pane = confirm.getDialogPane();
+
+                pane.setStyle(
+                        "-fx-background-color: #1D2529;" +
+                        "-fx-font-family: '" + ConnectFourApp.globalFontFamily + "';" +
+                        "-fx-font-size: 18px;" +
+                        "-fx-text-fill: #FFF;"
+                );
+
+                pane.lookupButton(ButtonType.OK).setStyle(
+                        "-fx-background-color: #F24339;" +
+                                "-fx-text-fill: white;" +
+                                "-fx-font-weight: bold;"
+                );
+                pane.lookupButton(ButtonType.CANCEL).setStyle(
+                        "-fx-background-color: #F98C02;" +
+                                "-fx-text-fill: white;" +
+                                "-fx-font-weight: bold;"
+                );
+
                 confirm.showAndWait()
                         .filter(ButtonType.OK::equals)
                         .ifPresent(__ -> handleCreateRoom());
@@ -212,34 +233,34 @@ public class RoomController {
         }
     }
 
-    /** Spectates a full room by ID. */
-    public void handleJoinAsSpectator() {
-        String id = roomIdField.getText().trim();
-        if (id.isEmpty()) {
-            messageLabel.setText("Enter a room ID.");
-        } else {
-            showWaiting("Joining as spectator…");
-            new Thread(() -> {
-                try {
-                    conn.sendMessage(new Message(
-                            UUID.randomUUID().toString(),
-                            MessageType.SPECTATE,
-                            id,
-                            currentUser.getUsername(),
-                            null,
-                            System.currentTimeMillis()
-                    ));
-                    waitForGameStart();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    Platform.runLater(() -> {
-                        showError("Spectate failed: " + ex.getMessage());
-                        app.showRoomScene();
-                    });
-                }
-            }, "Spectate-Thread").start();
-        }
-    }
+//    /** Spectates a full room by ID. */
+//    public void handleJoinAsSpectator() {
+//        String id = roomIdField.getText().trim();
+//        if (id.isEmpty()) {
+//            messageLabel.setText("Enter a room ID.");
+//        } else {
+//            showWaiting("Joining as spectator…");
+//            new Thread(() -> {
+//                try {
+//                    conn.sendMessage(new Message(
+//                            UUID.randomUUID().toString(),
+//                            MessageType.SPECTATE,
+//                            id,
+//                            currentUser.getUsername(),
+//                            null,
+//                            System.currentTimeMillis()
+//                    ));
+//                    waitForGameStart();
+//                } catch (Exception ex) {
+//                    ex.printStackTrace();
+//                    Platform.runLater(() -> {
+//                        showError("Spectate failed: " + ex.getMessage());
+//                        app.showRoomScene();
+//                    });
+//                }
+//            }, "Spectate-Thread").start();
+//        }
+//    }
 
     // ──────────────────────────────────────────────────
     //  Internal helpers
