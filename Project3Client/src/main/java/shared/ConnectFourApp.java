@@ -34,6 +34,11 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar;
 import java.net.SocketTimeoutException;
 import javafx.scene.control.ProgressIndicator;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.binding.Bindings;
+
+
 import java.util.Optional;
 
 
@@ -400,10 +405,6 @@ public class ConnectFourApp extends Application {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            // immediately switch to opponent:
-//            myTurn = false;
-//            statusField.setText("Opponent…");
-//            dropBtn.setDisable(true);
             colField.clear();
         });
 
@@ -495,8 +496,8 @@ public class ConnectFourApp extends Application {
                         int c = Integer.parseInt(parts[0]);
                         int r = Integer.parseInt(parts[1]);
                         Color fill = msg.getSender().equals(currentUser.getUsername())
-                                ? Color.RED
-                                : Color.YELLOW;
+                                ? Color.BLUE
+                                : Color.RED;
                         Platform.runLater(() -> cells[r][c].setFill(fill));
 
                         // if it was *their* move, now it's your turn
@@ -549,51 +550,38 @@ public class ConnectFourApp extends Application {
         }, "GameListener").start();
     }
 
-    // ONlY FOR 10s
+    // ONlY FOR 15s
     private void showResultScene(String outcomeText) {
+        // Outcome message label
         Label outcome = new Label(outcomeText);
         outcome.setStyle("-fx-font-size: 36px; -fx-text-fill: #333;");
         outcome.setAlignment(Pos.CENTER);
 
+        // Create the two action buttons
         Button yes = new Button("Rematch");
         Button no  = new Button("No, back to menu");
 
-        yes.setOnAction(e -> {
-            // 1) go into “waiting for opponent” UI
-            try{
-                conn.sendMessage(new Message(
-                        UUID.randomUUID().toString(),
-                        MessageType.REMATCH_REQUEST,
-                        currentRoomId,
-                        currentUser.getUsername(),
-                        null,
-                        System.currentTimeMillis()
-                ));
-                System.out.println(currentRoomId+" sended the message rematch to server");
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                return;
-            }
-            // 1) immediately show the waiting scene
-            showWaitingScene();
+        // Create a label to show the countdown timer
+        Label countdownLabel = new Label();
+        countdownLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #666;");
 
-            // 2) now spin off the blocking wait into its own thread
-            new Thread(() -> {
-                try {
-                    roomCtrl.waitForGameRematch();   // this blocks until server replies
-                    // when it returns, it should have already navigated to gameScene,
-                    // or you can handle rejection here:
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    // if rematch was rejected (or error), go back on the FX thread:
-                    Platform.runLater(() -> showOptionMenuScene());
-                }
-            }, "Rematch-Wait-Thread").start();
-        });
+        // Property holding the remaining seconds with an initial value of 15
+        final IntegerProperty timeSeconds = new SimpleIntegerProperty(15);
+        // Bind the countdown label's text so it updates automatically
+        countdownLabel.textProperty().bind(Bindings.concat("Auto default in: ", timeSeconds.asString(), " seconds"));
 
-        no.setOnAction(e -> {
-            // inform the server to tear down this room:
+        // Timeline to update the countdown label every second
+        Timeline countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
+            int currentTime = timeSeconds.get();
+            if (currentTime > 0) {
+                timeSeconds.set(currentTime - 1);
+            }
+        }));
+        countdownTimeline.setCycleCount(20);
+
+        // Timeline to auto-select "No, back to menu" after 15 seconds
+        Timeline autoTransitionTimeline = new Timeline(new KeyFrame(Duration.seconds(15), event -> {
+            System.out.println("15 seconds elapsed. Auto-selecting 'No, back to menu'.");
             try {
                 conn.sendMessage(new Message(
                         UUID.randomUUID().toString(),
@@ -603,24 +591,83 @@ public class ConnectFourApp extends Application {
                         null,
                         System.currentTimeMillis()
                 ));
-            }
-            catch (IOException ex) {
+            } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            // then go back to the main menu:
+            showOptionMenuScene();
+        }));
+        autoTransitionTimeline.setCycleCount(1);
+
+        // "Rematch" button action
+        yes.setOnAction(e -> {
+            // Stop the auto-transition and countdown timers if the user responds
+            autoTransitionTimeline.stop();
+            countdownTimeline.stop();
+            try {
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.REMATCH_REQUEST,
+                        currentRoomId,
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+                System.out.println(currentRoomId + " sent the rematch request to server");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return;
+            }
+            // Show waiting scene immediately
+            showWaitingScene();
+            // Spin off the waiting process in a new thread
+            new Thread(() -> {
+                try {
+                    roomCtrl.waitForGameRematch();   // blocks until the server replies
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    Platform.runLater(() -> showOptionMenuScene());
+                }
+            }, "Rematch-Wait-Thread").start();
+        });
+
+        // "No, back to menu" button action
+        no.setOnAction(e -> {
+            autoTransitionTimeline.stop();
+            countdownTimeline.stop();
+            try {
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.REMATCH_REJECT,
+                        currentRoomId,
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
             showOptionMenuScene();
         });
 
+        // Layout the buttons in an HBox
         HBox buttons = new HBox(20, yes, no);
         buttons.setAlignment(Pos.CENTER);
 
-        VBox root = new VBox(40, outcome, buttons);
+        // VBox holds the outcome label, buttons, and countdown label
+        VBox root = new VBox(40, outcome, buttons, countdownLabel);
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(30));
 
+        // Create the scene and show it in the primary stage
         resultScene = new Scene(root, 750, 450);
         primaryStage.setScene(resultScene);
+
+        // Start the countdown and auto-transition timers
+        countdownTimeline.play();
+        autoTransitionTimeline.play();
     }
+
+
 
 
     private void showResultPopUp(String outcomeText) {
@@ -634,9 +681,9 @@ public class ConnectFourApp extends Application {
         ButtonType nextBtn = new ButtonType("Next", ButtonBar.ButtonData.OK_DONE);
         dialog.getButtonTypes().setAll(nextBtn);
 
-        // Create a Timeline to auto-dismiss the popup after 10 seconds
-        Timeline autoCloseTimeline = new Timeline(new KeyFrame(Duration.seconds(10), event -> {
-            System.out.println("10 seconds passed without user action. Auto-transitioning...");
+        // Create a Timeline to auto-dismiss the popup after 5 seconds
+        Timeline autoCloseTimeline = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
+            System.out.println("5 seconds passed without user action. Auto-transitioning...");
             dialog.setResult(nextBtn); // Set the result as "Next"
             dialog.hide();             // Close the dialog
         }));
