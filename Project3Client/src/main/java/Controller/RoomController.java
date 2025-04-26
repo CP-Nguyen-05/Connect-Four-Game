@@ -84,12 +84,14 @@ public class RoomController {
 
                     StringBuilder sb = new StringBuilder();
                     for (RoomView rv : rooms) {
-                        sb.append(String.format("%s  (%d/%d)%s\n",
-                                rv.getRoomId(),
-                                rv.getCurrentPlayerCount(),
-                                rv.getMaxPlayerCapacity(),
-                                rv.isOpen() ? "" : " [FULL]")
-                        );
+                        String status;
+                        if (rv.isOpen()) {
+                            status = String.format("(%d/%d)", rv.getCurrentPlayerCount(), rv.getMaxPlayerCapacity());
+                        } else {
+                            status = "[FULL]";
+                        }
+
+                        sb.append(String.format("%-40s %10s\n", rv.getRoomId(), status));
                     }
                     roomListArea.setText(sb.toString());
                     messageLabel.setText("");

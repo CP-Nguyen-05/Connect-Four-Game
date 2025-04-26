@@ -2,3 +2,25 @@
     -fx-font-family: "m6x11plus";
     -fx-font-size: 18px;
 }
+.text-area .scroll-bar:vertical {
+    -fx-pref-width: 8px;
+}
+
+.text-area .scroll-bar .increment-button,
+.text-area .scroll-bar .decrement-button {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+    -fx-shape: "";
+    -fx-opacity: 0;
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+}
+.text-area .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.text-area .thumb {
+    -fx-background-color: #374A4D; /* change to match your theme */
+    -fx-background-radius: 5;
+}

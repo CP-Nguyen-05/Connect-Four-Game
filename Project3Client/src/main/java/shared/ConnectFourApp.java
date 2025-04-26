@@ -233,11 +233,11 @@ public class ConnectFourApp extends Application {
             roomTitle.setEditable(false);
             roomTitle.setStyle(
                     "-fx-text-fill: white;"+
-                            "-fx-font-size: 64;" +
-                            "-fx-background-color: #F24339;"+
-                            "-fx-border-radius: 10;" +
-                            "-fx-background-radius: 10;" +
-                            " -fx-border-color: #374A4D;"
+                    "-fx-font-size: 64;" +
+                    "-fx-background-color: #F24339;"+
+                    "-fx-border-radius: 10;" +
+                    "-fx-background-radius: 10;" +
+                    " -fx-border-color: #374A4D;"
             );
             roomTitle.setMinWidth(800);
             roomTitle.setMaxWidth(200);
@@ -252,12 +252,20 @@ public class ConnectFourApp extends Application {
             roomListArea.setPrefHeight(500);
             roomListArea.setMaxHeight(500);
             roomListArea.setStyle(
-                    "-fx-background-color: #1D2529;" +
+                    "-fx-control-inner-background: #1D2529;" +
                     " -fx-border-radius: 10;" +
                     " -fx-background-radius: 10;" +
                     " -fx-border-color: #374A4D;" +
-                    "-fx-font-size: 48px"
+                    "-fx-font-family: '" + ConnectFourApp.globalFontFamily + "';" +
+                    "-fx-font-size: 48px;" +
+                    "-fx-border-width: 2;" +
+                    "-fx-focus-color: transparent;" +
+                    "-fx-faint-focus-color: transparent;" +
+                    "-fx-text-fill: white;" +
+                    "-fx-caret-color: transparent;"
             );
+            roomListArea.setEditable(false);
+            roomListArea.setFocusTraversable(false);
 
             // 2) Reuse your existing input controls
             roomIdField = new TextField();
@@ -314,6 +322,7 @@ public class ConnectFourApp extends Application {
 
             roomScene = new Scene(root, 1600, 900);
             applyGlobalStyles(roomScene);
+            Platform.runLater(() -> primaryStage.getScene().getRoot().requestFocus());
         }
         else {
             // ** re‑enable and clear them any time you come back **
