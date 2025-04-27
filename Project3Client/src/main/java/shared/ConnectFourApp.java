@@ -432,7 +432,23 @@ public class ConnectFourApp extends Application {
         applyGlobalStyles(primaryStage.getScene());
     }
 
+    private void fillCell(Circle c, Color color) {
+        c.setFill(color);
+        c.setStroke(Color.web("#2f3a3c")); // Reset stroke color
+        c.setStrokeWidth(10);              // Reset stroke width
+    }
 
+    private void resetAllHighlights(Circle[][] cells) {
+        for (int r = 0; r < cells.length; r++) {
+            for (int c = 0; c < cells[0].length; c++) {
+                Circle circ = cells[r][c];
+                if (circ.getFill().equals(Color.WHITE)) {
+                    circ.setStroke(Color.web("#2f3a3c")); // dark background color
+                    circ.setStrokeWidth(10);
+                }
+            }
+        }
+    }
 
 
     public void showGameScene() {
@@ -453,6 +469,9 @@ public class ConnectFourApp extends Application {
         board.setHgap(20);
         board.setVgap(20);
         board.setAlignment(Pos.CENTER);
+        board.setStyle("-fx-background-color: #2f3a3c; -fx-border-radius: 5; -fx-background-radius: 10; -fx-border-width: 5;");
+        board.setPrefHeight(900);
+        board.setMaxHeight(900);
         board.setPadding(new Insets(10));
         Circle[][] cells = new Circle[6][7];
 
@@ -463,40 +482,77 @@ public class ConnectFourApp extends Application {
 
         for (int row = 0; row < 6; row++) {
             for (int col = 0; col < 7; col++) {
-                Circle cell = new Circle(60, Color.LIGHTGRAY);
-                cell.setStroke(Color.DARKGRAY);
+                Circle cell = new Circle(60, Color.WHITE);
+                cell.setStroke(Color.web("#2f3a3c"));
+                cell.setStrokeWidth(10);
                 cells[row][col] = cell;
 
                 final int column = col;
 
+//                cell.setOnMouseEntered(e -> {
+//                    if (!myTurn) return;
+//                    for (int r = 0; r < 6; r++) {
+//                        Circle c = cells[r][column];
+//                        // only color the empty slots
+//                        if (c.getFill().equals(Color.WHITE)) {
+//                            c.setFill(Color.web("#1D2529"));
+//                        }
+//                    }
+//                });
+//
+//                cell.setOnMouseExited(e -> {
+//                    if (!myTurn) return;
+//                    for (int r = 0; r < 6; r++) {
+//                        Circle c = cells[r][column];
+//                        // restore only those we painted black
+//                        if (c.getFill().equals(Color.web("#1D2529"))) {
+//                            c.setFill(Color.WHITE);
+//                        }
+//                    }
+//                });
+
                 cell.setOnMouseEntered(e -> {
                     if (!myTurn) return;
+
+                    // 1) RESET all strokes first
+                    for (int r = 0; r < 6; r++) {
+                        for (int c = 0; c < 7; c++) {
+                            Circle circ = cells[r][c];
+                            if (circ.getFill().equals(Color.WHITE)) {
+                                circ.setStroke(Color.web("#2f3a3c"));
+                                circ.setStrokeWidth(10);
+                            }
+                        }
+                    }
+
+                    // 2) THEN highlight this new column
                     for (int r = 0; r < 6; r++) {
                         Circle c = cells[r][column];
-                        // only color the empty slots
-                        if (c.getFill().equals(Color.LIGHTGRAY)) {
-                            c.setFill(Color.web("1D2529")); // NEED TO FIX
+                        if (c.getFill().equals(Color.WHITE)) {
+                            c.setStroke(myTurn ? Color.web("#0087F1") : Color.web("#FF6368"));
+                            c.setStrokeWidth(10);
                         }
                     }
                 });
+
 
                 cell.setOnMouseExited(e -> {
                     if (!myTurn) return;
                     for (int r = 0; r < 6; r++) {
                         Circle c = cells[r][column];
-                        // restore only those we painted black
-                        if (c.getFill().equals(Color.BLACK)) {
-                            c.setFill(Color.LIGHTGRAY);
+                        if (c.getFill().equals(Color.WHITE)) {
+                            c.setStroke(Color.web("#2f3a3c"));        // Reset back
                         }
                     }
                 });
+
 
                 cell.setOnMouseClicked(e -> {
                     for (int r = 0; r < 6; r++) {
                         Circle c = cells[r][column];
                         // restore only those we painted black
-                        if (c.getFill().equals(Color.BLACK)) {
-                            c.setFill(Color.LIGHTGRAY);
+                        if (c.getFill().equals(Color.web("#1D2529"))) {
+                            c.setFill(Color.WHITE);
                         }
                     }
                     if (!myTurn || gameOver) return;
@@ -513,6 +569,7 @@ public class ConnectFourApp extends Application {
                                     null,
                                     System.currentTimeMillis()
                             ));
+//                            resetAllHighlights(cells);
                             myTurn = false;
                             Platform.runLater(() -> statusField.setText("OPPONENT"));
                         } catch (IOException ex) {
@@ -706,9 +763,13 @@ public class ConnectFourApp extends Application {
                             int c = Integer.parseInt(parts[0]);
                             int r = Integer.parseInt(parts[1]);
                             Color fill = msg.getSender().equals(currentUser.getUsername())
-                                    ? Color.BLUE
-                                    : Color.RED;
-                            Platform.runLater(() -> cells[r][c].setFill(fill));
+                                    ? Color.web("#0087F1")
+                                    : Color.web("#FF6368");
+//                            Platform.runLater(() -> cells[r][c].setFill(fill));
+                            Platform.runLater(() ->
+                                    fillCell(cells[r][c], fill));
+                                    resetAllHighlights(cells);
+
 
                             // if it was *their* move, now it's your turn
                             if (!msg.getSender().equals(currentUser.getUsername())) {
@@ -773,8 +834,12 @@ public class ConnectFourApp extends Application {
             new Alert(AlertType.WARNING, "That column is full!").showAndWait();
             return;
         }
-        cells[row][column].setFill(Color.BLUE);
-        if (checkWin(cells, row, column, Color.BLUE)) {
+//        cells[row][column].setFill(Color.web("#0087F1"));
+        fillCell(cells[row][column], Color.web("#0087F1"));
+
+        resetAllHighlights(cells);
+
+        if (checkWin(cells, row, column, Color.web("#0087F1"))) {
             gameOver = true;
             showResultPopUp("YOU WIN!");
             singlePlayerMode=false;
@@ -797,9 +862,11 @@ public class ConnectFourApp extends Application {
         aiPause.setOnFinished(evt -> {
             int aiCol = pickRandomColumn(cells);
             int aiRow = findDropRow(aiCol, cells);
-            cells[aiRow][aiCol].setFill(Color.RED);
+//            cells[aiRow][aiCol].setFill(Color.web("#FF6368"));
+            fillCell(cells[aiRow][aiCol], Color.web("#FF6368"));
 
-            if (checkWin(cells, aiRow, aiCol, Color.RED)) {
+
+            if (checkWin(cells, aiRow, aiCol, Color.web("#FF6368"))) {
                 gameOver = true;
                 Platform.runLater(() -> showResultPopUp("YOU LOSE!"));
                 singlePlayerMode=false;
@@ -821,7 +888,7 @@ public class ConnectFourApp extends Application {
 
     private int findDropRow(int col, Circle[][] cells) {
         for (int r = cells.length - 1; r >= 0; r--) {
-            if (cells[r][col].getFill().equals(Color.LIGHTGRAY)) {
+            if (cells[r][col].getFill().equals(Color.WHITE)) {
                 return r;
             }
         }
