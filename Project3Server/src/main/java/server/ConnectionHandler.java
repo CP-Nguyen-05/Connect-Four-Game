@@ -334,12 +334,13 @@ public class ConnectionHandler implements Runnable {
                                     ConnectionHandler ch1 = server.findByUsername(u1.getUsername());
                                     ConnectionHandler ch2 = server.findByUsername(u2.getUsername());
 
+                                    payload=roomId+"|"+u1.getUsername()+","+u2.getUsername();
                                     // tell both to switch to game UI
                                     for (ConnectionHandler ch : List.of(ch1, ch2)) {
                                         ch.sendMessage(new Message(
                                                 UUID.randomUUID().toString(),
                                                 MessageType.GAME_START,
-                                                roomId,
+                                                payload,
                                                 "SERVER",
                                                 ch.getUsername(),
                                                 System.currentTimeMillis()

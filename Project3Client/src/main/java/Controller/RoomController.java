@@ -305,13 +305,16 @@ public class RoomController {
                     return;
                 }
 
-                // 3b) otherwise we expect GAME_START
-                //     the roomId is carried in reply.getContent()
-                String joinedId = reply.getContent();
-                Platform.runLater(() -> {
-                    app.setCurrentRoomId(joinedId);
-                    app.showGameScene();
-                });
+                else if (reply.getType() == MessageType.GAME_START) {
+                    // reply.getContent() == "roomId|Alice,Bob"
+                    String[] parts = reply.getContent().split("\\|", 2);
+                    String[] names = parts[1].split(",", 2);
+                    Platform.runLater(() -> {
+                        app.setPlayerNames(names[1],names[0]);
+                        app.setCurrentRoomId(roomId);
+                        app.showGameScene();
+                    });
+                }
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -356,13 +359,22 @@ public class RoomController {
         do {
             m = conn.receiveMessage();
             if (m.getType() == MessageType.ROOM_CANCELLED) {
-                Platform.runLater(() -> app.showRoomScene());
+                Platform.runLater(app::showRoomScene);
                 return;
             }
         } while (m.getType() != MessageType.GAME_START);
 
-        String roomId = m.getContent();
+        // Capture either the whole Message or just its content into a final var:
+        final String payload = m.getContent();
+        // OR:
+        // final Message gameStartMsg = m;
+
         Platform.runLater(() -> {
+            // now you can reference `payload` (or `gameStartMsg`) inside the lambda
+            String[] parts = payload.split("\\|", 2);
+            String roomId = parts[0];
+            String[] names = parts[1].split(",", 2);
+            app.setPlayerNames(names[0], names[1]);
             app.setCurrentRoomId(roomId);
             app.showGameScene();
         });

@@ -84,6 +84,11 @@ public class ConnectFourApp extends Application {
     public void setCurrentRoomId(String id) {
         this.currentRoomId = id;
     }
+    private String player1Name, player2Name;
+    public void setPlayerNames(String p1, String p2) {
+        this.player1Name = p1;
+        this.player2Name = p2;
+    }
 
     private void loadCustomFont() {
         globalFont = Font.loadFont(getClass().getResourceAsStream(FONT_PATH), DEFAULT_FONT_SIZE);
@@ -220,6 +225,7 @@ public class ConnectFourApp extends Application {
             gameOver = false;
             singlePlayerMode = true;
             setMyTurn(true);         // ← give the human the first turn
+            setPlayerNames(currentUser.getUsername(),"Computer");
             showGameScene();
         });
         howToPlayButton.setOnAction(e -> showHowToPlayScene());
@@ -596,7 +602,9 @@ public class ConnectFourApp extends Application {
                 "-fx-background-radius: 10;"
         );
 
-        Label vsLabel = new Label("P1\n\nVS\n\nP2");
+        Label vsLabel = new Label(
+                player1Name + "\n\nVS\n\n" + player2Name
+        );
         vsLabel.setPadding(new Insets(20));
         vsLabel.setPrefWidth(390);
         vsLabel.setMaxWidth(390);
