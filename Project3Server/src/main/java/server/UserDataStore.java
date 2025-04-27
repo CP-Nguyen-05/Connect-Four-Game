@@ -4,6 +4,9 @@ import shared.User;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.stream.Stream;
+import java.util.Comparator;
+import java.util.stream.Collectors;
 import java.util.List;
 
 /**
@@ -71,5 +74,11 @@ public class UserDataStore {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+    public List<User> getLeaderboard() {
+        return loadUsers().stream()
+                .filter(u -> u.getScore() > 0)
+                .sorted(Comparator.comparingInt(User::getScore).reversed())
+                .collect(Collectors.toList());
     }
 }

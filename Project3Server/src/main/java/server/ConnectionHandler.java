@@ -298,6 +298,22 @@ public class ConnectionHandler implements Runnable {
                                 System.currentTimeMillis()
                         ));
                         break;
+                    case LIST_LEADERBOARD:
+                        // get every user, drop anyone with zero points, sort desc by score
+                        List<User> top = userService.getLeaderboard();
+                        // build a payload string, e.g. "Alice|4100;Bob|4000;…"
+                        payload = top.stream()
+                                .map(u -> u.getUsername() + "|" + u.getScore())
+                                .collect(Collectors.joining(";"));
+                        sendMessage(new Message(
+                                UUID.randomUUID().toString(),
+                                MessageType.LEADERBOARD,
+                                payload,
+                                "SERVER",
+                                msg.getSender(),
+                                System.currentTimeMillis()
+                        ));
+                        break;
                     case JOIN_ROOM:
                         String roomId = msg.getContent();
                         Optional<Room> opt = server.getRoomManager().findRoomById(roomId);

@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 import javafx.application.Application;
+import java.util.Arrays;
+import java.util.stream.Stream;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.scene.text.TextAlignment;
@@ -267,73 +269,158 @@ public class ConnectFourApp extends Application {
         TextField title = new TextField("LEADERBOARD");
         title.setMouseTransparent(true);
         title.setFocusTraversable(false);
-        title.setEditable(false);  // Make it read-only
+        title.setEditable(false);
         title.setStyle(
-                "-fx-text-fill: white;"+
+                "-fx-text-fill: white;" +
                         "-fx-font-size: 64;" +
-                        "-fx-background-color: #AE65FF;"+
+                        "-fx-background-color: #F24339;" +
                         "-fx-border-radius: 10;" +
                         "-fx-background-radius: 10;" +
-                        " -fx-border-color: #374A4D;"
+                        "-fx-border-color: #374A4D;"
         );
         title.setMinWidth(1000);
-        title.setMaxWidth(300);
+        title.setMaxWidth(1000);
         title.setAlignment(Pos.CENTER);
 
         HBox titleRow = new HBox(title);
         titleRow.setAlignment(Pos.CENTER);
 
-        TextArea howTo = new TextArea(
-                "- Two players take turns dropping discs into columns.\n\n" +
-                        "- Discs fall to the lowest available space in the selected column.\n\n" +
-                        "- The goal is to connect four of your discs in a row:\n\n" +
-                        "        - Horizontally\n\n" +
-                        "        - Vertically\n\n" +
-                        "        - Diagonally\n\n" +
-                        "- The first player to connect four wins the game.\n\n" +
-                        "- If the board is full and no one wins, it’s a draw."
-        );
-        howTo.setEditable(false);
-        howTo.setMouseTransparent(true);
-        howTo.setFocusTraversable(false);
-        howTo.setPrefWidth(1000);
-        howTo.setMaxWidth(1000);
-        howTo.setPrefHeight(650);
-        howTo.setMaxHeight(650);
-        howTo.setStyle(
-                "-fx-control-inner-background: #1D2529;" +
-                        "-fx-background-color: #1D2529;" +
-                        "-fx-border-color: #374A4D;" +
-                        "-fx-border-width: 2;" +
-                        "-fx-focus-color: transparent;" +
-                        "-fx-faint-focus-color: transparent;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-border-radius: 10;" +
+        // ===== Leaderboard List =====
+        VBox leaderboardList = new VBox(20);
+        leaderboardList.setAlignment(Pos.TOP_CENTER);
+        leaderboardList.setPadding(new Insets(30));
+
+//        // Example Players
+//        String[][] players = {
+//                { "James", "4200"},
+//                { "Alice", "4100"},
+//                {"Bob", "4000"}
+//        };
+//        int rank = 1;
+//        for (String[] p : players) {
+//            Label rank = new Label(String.valueOf(rank));
+//            rank.setStyle("-fx-text-fill: #F98C02; -fx-font-size: 36px; -fx-font-weight: bold;");
+//            rank.setPrefWidth(80);                   // ← width for number
+//            rank.setAlignment(Pos.CENTER_LEFT);       // ← align left
+//
+//            Label username = new Label(p[1]);
+//            username.setStyle("-fx-text-fill: white; -fx-font-size: 36px;");
+//            username.setPrefWidth(500);                // ← width for name
+//            username.setAlignment(Pos.CENTER);         // ← center align
+//
+//            Label score = new Label(p[2] + " pts");
+//            score.setStyle("-fx-text-fill: #0087F1; -fx-font-size: 36px;");
+//            score.setPrefWidth(200);                    // ← width for score
+//            score.setAlignment(Pos.CENTER_RIGHT);       // ← right align
+//
+//            HBox row = new HBox(rank, username, score);
+//            row.setAlignment(Pos.CENTER);
+//            leaderboardList.getChildren().add(row);
+//            rank+=1;
+//        }
+
+
+        VBox leaderboardCard = new VBox(leaderboardList);
+        leaderboardCard.setAlignment(Pos.TOP_CENTER);
+        leaderboardCard.setStyle(
+                "-fx-background-color: #1D2529;" +
+                        "-fx-border-radius: 5;" +
                         "-fx-background-radius: 10;" +
-                        "-fx-caret-color: transparent;" +
-                        "-fx-font-size: 36px;"
+                        "-fx-border-color: #374A4D;" +
+                        "-fx-border-width: 3;"
         );
-
-        VBox container = new VBox(howTo);
-        container.setAlignment(Pos.CENTER);
-        container.setPrefWidth(900);
-
+        leaderboardCard.setMaxWidth(1000);
+        leaderboardCard.setMaxHeight(600);
+        leaderboardCard.setMinHeight(600);
+        leaderboardCard.setPadding(new Insets(20));
 
         Button back = new Button("BACK");
-        back.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-size: 36px");
-        back.setPrefWidth(120);
-        back.setPrefHeight(40);
+        back.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-size: 36px;");
+        back.setPrefWidth(200);
         back.setOnAction(e -> showOptionMenuScene());
 
-        HBox buttonBox = new HBox(back);
-        buttonBox.setAlignment(Pos.CENTER);
-
-        VBox root = new VBox(10, titleRow, container, buttonBox);
-        root.setPadding(new Insets(20));
-        primaryStage.setScene(new Scene(root, 1600, 900));
+        VBox root = new VBox(30, titleRow, leaderboardCard, back);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(30));
         root.setStyle("-fx-background-color: #374A4D;");
-        applyGlobalStyles(primaryStage.getScene());
+
+        Scene scene = new Scene(root, 1600, 900);
+        primaryStage.setScene(scene);
+        applyGlobalStyles(scene);
+
+        new Thread(() -> {
+            try {
+                // send the request
+                conn.sendMessage(new Message(
+                        UUID.randomUUID().toString(),
+                        MessageType.LIST_LEADERBOARD,
+                        "",
+                        currentUser.getUsername(),
+                        null,
+                        System.currentTimeMillis()
+                ));
+
+                // wait for the reply
+                Message reply;
+                do {
+                    reply = conn.receiveMessage();
+                } while (reply.getType() != MessageType.LEADERBOARD);
+
+                // parse "alice|42;bob|30;carol|15"
+                String content = reply.getContent();
+                String[][] players = Arrays.stream(content.split(";", -1))
+                        .filter(s -> !s.isBlank())
+                        .map(chunk -> chunk.split("\\|", 2))
+                        .toArray(String[][]::new);
+
+                // now update the VBox on the FX thread
+                Platform.runLater(() -> {
+                    leaderboardList.getChildren().clear();
+                    int rank = 1;
+                    for (String[] p : players) {
+                        // p[0]=username, p[1]=score
+                        Label rankLabel = new Label(String.valueOf(rank));
+                        rankLabel.setStyle("-fx-text-fill: #F98C02; -fx-font-size: 36px; -fx-font-weight: bold;");
+                        rankLabel.setPrefWidth(80);
+                        rankLabel.setAlignment(Pos.CENTER_LEFT);
+
+                        Label username = new Label(p[0]);
+                        username.setStyle("-fx-text-fill: white; -fx-font-size: 36px;");
+                        username.setPrefWidth(500);
+                        username.setAlignment(Pos.CENTER);
+
+                        Label score = new Label(p[1] + " pts");
+                        score.setStyle("-fx-text-fill: #0087F1; -fx-font-size: 36px;");
+                        score.setPrefWidth(200);
+                        score.setAlignment(Pos.CENTER_RIGHT);
+
+                        HBox row = new HBox( rankLabel, username, score );
+                        row.setAlignment(Pos.CENTER);
+                        leaderboardList.getChildren().add(row);
+
+                        rank++;
+                    }
+
+                    if (players.length == 0) {
+                        Label none = new Label("No scores yet!");
+                        none.setStyle("-fx-text-fill: white; -fx-font-size: 36px;");
+                        leaderboardList.getChildren().add(none);
+                    }
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Platform.runLater(() ->
+                        leaderboardList.getChildren().setAll(
+                                new Label("Error loading leaderboard.")
+                        )
+                );
+            }
+        }, "FetchLeaderboard-Thread").start();
     }
+
+
+
+
 
     public void showRoomScene() {
         if (onlineCountField == null) {
@@ -1229,7 +1316,7 @@ public class ConnectFourApp extends Application {
         title.setStyle(
                 "-fx-text-fill: white;"+
                 "-fx-font-size: 64;" +
-                "-fx-background-color: #AE65FF;"+
+                "-fx-background-color: #F24339;"+
                 "-fx-border-radius: 10;" +
                 "-fx-background-radius: 10;" +
                 " -fx-border-color: #374A4D;"

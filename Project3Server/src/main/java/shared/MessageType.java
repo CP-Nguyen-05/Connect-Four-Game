@@ -10,6 +10,8 @@ public enum MessageType {
     ROOM_CREATED,
     CANCEL_ROOM,
     ROOM_CANCELLED,
+    LIST_LEADERBOARD,
+    LEADERBOARD,
     JOIN_ROOM,   // client → server: join a specific room
     QUICK_JOIN,  // client → server: join any open room
     LIST_ROOMS,      // client → server: “send me all open rooms”
