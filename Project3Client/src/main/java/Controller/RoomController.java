@@ -78,9 +78,15 @@ public class RoomController {
                     roomList.clear();
                     roomList.addAll(parsedRooms);
                     StringBuilder displayText = new StringBuilder();
-                    for (RoomView room : roomList) {
-                        String status = room.isOpen() ? "(" + room.getCurrentPlayerCount() + "/" + room.getMaxPlayerCapacity() + ")" : "[FULL]";
-                        displayText.append(room.getRoomId()).append(" ").append(status).append("\n");
+                    for (RoomView rv : roomList) {
+                        String status;
+                        if (rv.isOpen()) {
+                            status = String.format("(%d/%d)", rv.getCurrentPlayerCount(), rv.getMaxPlayerCapacity());
+                        } else {
+                            status = "[FULL]";
+                        }
+
+                        displayText.append(String.format("%-40s %10s\n", rv.getRoomId(), status));
                     }
                     roomDisplayArea.setText(displayText.toString());
                     messageDisplay.setText("");
