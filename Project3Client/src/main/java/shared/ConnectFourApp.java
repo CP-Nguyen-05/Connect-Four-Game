@@ -52,14 +52,14 @@ import java.io.IOException;
 public class ConnectFourApp extends Application {
     private Stage primaryStage;
     private User currentUser;
-    private Client client;  // or ClientConnection + Client wrapper
+    private Client client;
     private ClientConnection conn;
 
     // Font
     public static final String FONT_PATH = "/fonts/m6x11plus.ttf";
     public static final double DEFAULT_FONT_SIZE = 18;
     public static Font globalFont;
-    public static String globalFontFamily = "W95FA";
+    public static String globalFontFamily = "m6x11plus";
 
     // Controllers
     private LoginController loginCtrl;
@@ -69,7 +69,7 @@ public class ConnectFourApp extends Application {
     private Scene roomScene, waitingScene, gameScene, resultScene;
     private String currentRoomId;
     private TextField roomIdField, statusField;
-    private Label messageLabel;   // ← pull this out
+    private Label messageLabel;
     private RoomController roomCtrl;
     private final List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
@@ -139,7 +139,7 @@ public class ConnectFourApp extends Application {
         showOptionMenuScene();
     }
     public void logout() {
-        // 1) Close the socket, if open
+        //Close the socket, if open
         try {
             if (conn != null) {
                 conn.close();
@@ -149,7 +149,7 @@ public class ConnectFourApp extends Application {
         }
         conn = null;
 
-        // 2) Clear any user state
+        //Clear any user state
         currentUser = null;
         currentRoomId = null;
         roomScene    = null;
@@ -159,7 +159,7 @@ public class ConnectFourApp extends Application {
         roomCtrl     = null;
 
 
-        // 3) Go back to the login screen
+        // Go back to the login screen
         showLoginScene();
     }
 
@@ -227,7 +227,7 @@ public class ConnectFourApp extends Application {
         vsComputerBtn.setOnAction(e -> {
             gameOver = false;
             singlePlayerMode = true;
-            setMyTurn(true);         // ← give the human the first turn
+            setMyTurn(true);
             setPlayerNames(currentUser.getUsername(),"Computer");
             showGameScene();
         });
@@ -251,11 +251,11 @@ public class ConnectFourApp extends Application {
         root.setMinHeight(250);
 
 
-        VBox layout = new VBox(50, title, root);  // 50 px space between title and menu
+        VBox layout = new VBox(50, title, root);
         layout.setAlignment(Pos.CENTER);
         VBox.setMargin(title, new Insets(0, 0, 0, 0));
 
-        StackPane background = new StackPane(layout); // layout = your VBox with title + buttons
+        StackPane background = new StackPane(layout);
         background.setBackground(new Background(bg));
 
 
@@ -284,7 +284,6 @@ public class ConnectFourApp extends Application {
         HBox titleRow = new HBox(title);
         titleRow.setAlignment(Pos.CENTER);
 
-        // ===== Leaderboard List =====
         VBox leaderboardList = new VBox(20);
         leaderboardList.setAlignment(Pos.TOP_CENTER);
         leaderboardList.setPadding(new Insets(30));
@@ -386,10 +385,6 @@ public class ConnectFourApp extends Application {
         }, "FetchLeaderboard-Thread").start();
     }
 
-
-
-
-
     public void showRoomScene() {
         if (onlineCountField == null) {
             onlineCountField = new Label("Online: 0");
@@ -399,7 +394,7 @@ public class ConnectFourApp extends Application {
         singlePlayerMode = false;
         gameOver         = false;
         if (roomScene == null) {
-            // 1) Create the display area
+            // Create the display area
             TextField roomTitle = new TextField("AVAILABLE ROOMS");
             roomTitle.setFocusTraversable(false);
             roomTitle.setEditable(false);
@@ -438,7 +433,7 @@ public class ConnectFourApp extends Application {
             roomListArea.setEditable(false);
             roomListArea.setFocusTraversable(false);
 
-            // 2) Reuse your existing input controls
+            // Reuse your existing input controls
             roomIdField = new TextField();
             roomIdField.setPromptText("Enter room ID");
             roomIdField.setPrefHeight(40);
@@ -464,7 +459,7 @@ public class ConnectFourApp extends Application {
             backButton.setPrefWidth(190);
             backButton.setPrefHeight(40);
 
-            // 3) Instantiate controller with the plain list and text area
+            // Instantiate controller with the plain list and text area
             roomCtrl = new RoomController(
                     conn,
                     currentUser,
@@ -475,7 +470,7 @@ public class ConnectFourApp extends Application {
                     messageLabel
             );
 
-            // 4) Wire buttons
+            // Wire buttons
             refreshButton.setOnAction(e -> roomCtrl.fetchAvailableRooms());
             quickJoinButton.setOnAction(e -> roomCtrl.handleQuickJoin());
             joinByIdButton.setOnAction(e -> roomCtrl.handleJoinRoomById());
@@ -505,7 +500,7 @@ public class ConnectFourApp extends Application {
             Platform.runLater(() -> primaryStage.getScene().getRoot().requestFocus());
         }
         else {
-            // ** re‑enable and clear them any time you come back **
+            // re‑enable and clear them any time you come back
             roomListArea.setDisable(false);
             roomIdField.setDisable(false);
             roomIdField.clear();
@@ -556,8 +551,8 @@ public class ConnectFourApp extends Application {
 
     private void fillCell(Circle c, Color color) {
         c.setFill(color);
-        c.setStroke(Color.web("#2f3a3c")); // Reset stroke color
-        c.setStrokeWidth(10);              // Reset stroke width
+        c.setStroke(Color.web("#2f3a3c"));
+        c.setStrokeWidth(10);
     }
 
     private void resetAllHighlights(Circle[][] cells) {
@@ -565,7 +560,7 @@ public class ConnectFourApp extends Application {
             for (int c = 0; c < cells[0].length; c++) {
                 Circle circ = cells[r][c];
                 if (circ.getFill().equals(Color.WHITE)) {
-                    circ.setStroke(Color.web("#2f3a3c")); // dark background color
+                    circ.setStroke(Color.web("#2f3a3c"));
                     circ.setStrokeWidth(10);
                 }
             }
@@ -586,7 +581,7 @@ public class ConnectFourApp extends Application {
                 new BackgroundSize(100, 100, true, true, true, false)
         );
 
-        // 1) Build the static board
+        // Build the static board
         GridPane board = new GridPane();
         board.setHgap(20);
         board.setVgap(20);
@@ -611,32 +606,11 @@ public class ConnectFourApp extends Application {
 
                 final int column = col;
 
-//                cell.setOnMouseEntered(e -> {
-//                    if (!myTurn) return;
-//                    for (int r = 0; r < 6; r++) {
-//                        Circle c = cells[r][column];
-//                        // only color the empty slots
-//                        if (c.getFill().equals(Color.WHITE)) {
-//                            c.setFill(Color.web("#1D2529"));
-//                        }
-//                    }
-//                });
-//
-//                cell.setOnMouseExited(e -> {
-//                    if (!myTurn) return;
-//                    for (int r = 0; r < 6; r++) {
-//                        Circle c = cells[r][column];
-//                        // restore only those we painted black
-//                        if (c.getFill().equals(Color.web("#1D2529"))) {
-//                            c.setFill(Color.WHITE);
-//                        }
-//                    }
-//                });
 
                 cell.setOnMouseEntered(e -> {
                     if (!myTurn) return;
 
-                    // 1) RESET all strokes first
+                    //RESET all strokes first
                     for (int r = 0; r < 6; r++) {
                         for (int c = 0; c < 7; c++) {
                             Circle circ = cells[r][c];
@@ -647,7 +621,7 @@ public class ConnectFourApp extends Application {
                         }
                     }
 
-                    // 2) THEN highlight this new column
+                    //THEN highlight this new column
                     for (int r = 0; r < 6; r++) {
                         Circle c = cells[r][column];
                         if (c.getFill().equals(Color.WHITE)) {
@@ -663,7 +637,7 @@ public class ConnectFourApp extends Application {
                     for (int r = 0; r < 6; r++) {
                         Circle c = cells[r][column];
                         if (c.getFill().equals(Color.WHITE)) {
-                            c.setStroke(Color.web("#2f3a3c"));        // Reset back
+                            c.setStroke(Color.web("#2f3a3c"));
                         }
                     }
                 });
@@ -701,7 +675,7 @@ public class ConnectFourApp extends Application {
             }
         }
 
-        // 3) Chat panel (unchanged)
+        //Chat panel
         TextArea chatArea = new TextArea();
         chatArea.setEditable(false);
         chatArea.setWrapText(true);
@@ -836,7 +810,7 @@ public class ConnectFourApp extends Application {
                 "-fx-border-radius: 10;"
                 );
 
-        // 4) Lay everything out
+        //Lay everything out
         VBox leftPane = new VBox(board);
         leftPane.setAlignment(Pos.CENTER);
         leftPane.setPrefWidth(1000);
@@ -858,7 +832,7 @@ public class ConnectFourApp extends Application {
             sendButton.setStyle("-fx-background-color: #182325; -fx-text-fill: #FFF; -fx-font-size: 24;");
         }
 
-        // 5) Listener thread: paint moves, chat, end, *and* flip turns
+        //Listener thread: paint moves, chat, end, and flip turns
         if (!singlePlayerMode) {
             new Thread(() -> {
                 try {
@@ -883,7 +857,7 @@ public class ConnectFourApp extends Application {
                             Platform.runLater(() ->{
                                     fillCell(cells[r][c], fill);
                                     resetAllHighlights(cells);
-                                // if it was *their* move, now it's your turn
+                                // if it was their move, now it's your turn
                                     if (!msg.getSender().equals(currentUser.getUsername())) {
                                         myTurn = true;
                                         Platform.runLater(() -> {
@@ -933,22 +907,21 @@ public class ConnectFourApp extends Application {
             }, "GameListener").start();
         }
     }
-    // ───── Single-player helper methods ─────
 
-    /** Drops a human piece, checks win, then AI move and checks win. */
+//    Single-player helper methods
+//    Drops a human piece, checks win, then AI move and checks win.
     private void handleLocalMove(int column, Circle[][] cells) {
         if (gameOver){
             singlePlayerMode=false;
             return;
         }
 
-        // 1) human drop
+        // player drop
         int row = findDropRow(column, cells);
         if (row < 0) {
             new Alert(AlertType.WARNING, "That column is full!").showAndWait();
             return;
         }
-//        cells[row][column].setFill(Color.web("#0087F1"));
         fillCell(cells[row][column], Color.web("#0087F1"));
 
         resetAllHighlights(cells);
@@ -959,7 +932,7 @@ public class ConnectFourApp extends Application {
             singlePlayerMode=false;
             return;
         }
-        // **draw?**
+        // draw?
         if (isDraw(cells)) {
             gameOver = true;
             showResultPopUp("Draw!");
@@ -971,12 +944,11 @@ public class ConnectFourApp extends Application {
         statusField.setText("OPPONENT");
         if (aiPause != null) aiPause.stop();
 
-        // 2) AI move after delay
+        // BOT move after delay
         aiPause = new PauseTransition(Duration.seconds(1));
         aiPause.setOnFinished(evt -> {
             int aiCol = pickRandomColumn(cells);
             int aiRow = findDropRow(aiCol, cells);
-//            cells[aiRow][aiCol].setFill(Color.web("#FF6368"));
             fillCell(cells[aiRow][aiCol], Color.web("#FF6368"));
 
 
@@ -986,7 +958,7 @@ public class ConnectFourApp extends Application {
                 singlePlayerMode=false;
                 return;
             }
-            // **draw?**
+            // draw?
             if (isDraw(cells)) {
                 gameOver = true;
                 Platform.runLater(() -> showResultPopUp("DRAW!"));
@@ -1047,7 +1019,7 @@ public class ConnectFourApp extends Application {
         }
         return cnt;
     }
-    /** true when there are no more valid drops left */
+//    true when there are no more valid drops left
     private boolean isDraw(Circle[][] cells) {
         for (int c = 0; c < cells[0].length; c++) {
             if (findDropRow(c, cells) >= 0) return false;
@@ -1055,7 +1027,6 @@ public class ConnectFourApp extends Application {
         return true;
     }
 
-    // ONlY FOR 15s
     private void showResultScene(String outcomeText) {
         // Outcome message label
         Label outcome = new Label(outcomeText);
@@ -1089,7 +1060,7 @@ public class ConnectFourApp extends Application {
         Label countdownLabel = new Label();
         countdownLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: #0087F1;");
 
-        // Property holding the remaining seconds with an initial value of 15
+        // Property holding the remaining seconds
         final IntegerProperty timeSeconds = new SimpleIntegerProperty(seconds);
         // Bind the countdown label's text so it updates automatically
         countdownLabel.textProperty().bind(Bindings.concat("GO BACK MENU AFTER ", timeSeconds.asString(), " SECONDS"));
@@ -1122,14 +1093,14 @@ public class ConnectFourApp extends Application {
 
 
         if (singlePlayerMode){
-            // 2a) live countdown
+            // live countdown
             Timeline countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
                 if (timeSeconds.get() > 0) timeSeconds.set(timeSeconds.get() - 1);
             }));
             countdown.setCycleCount(seconds);
             countdown.play();
 
-            // 2b) auto-back
+            // auto-back
             PauseTransition autoBack = new PauseTransition(Duration.seconds(seconds));
             autoBack.setOnFinished(e -> showOptionMenuScene());
             autoBack.play();
@@ -1151,13 +1122,13 @@ public class ConnectFourApp extends Application {
 
         }
         else{
-            // 3a) live countdown
+            // live countdown
             Timeline countdown = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
                 if (timeSeconds.get() > 0) timeSeconds.set(timeSeconds.get() - 1);
             }));
             countdown.setCycleCount(seconds);
 
-            // 3b) auto-reject exactly once
+            // auto-reject exactly once
             Timeline autoReject = new Timeline(new KeyFrame(Duration.seconds(seconds), e -> {
                 try {
                     conn.sendMessage(new Message(
@@ -1235,13 +1206,12 @@ public class ConnectFourApp extends Application {
         // Create a Timeline to auto-dismiss the popup after 5 seconds
         Timeline autoCloseTimeline = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
             System.out.println("5 seconds passed without user action. Auto-transitioning...");
-            dialog.setResult(nextBtn); // Set the result as "Next"
-            dialog.hide();             // Close the dialog
+            dialog.setResult(nextBtn);
+            dialog.hide();
         }));
         autoCloseTimeline.setCycleCount(1);
         autoCloseTimeline.play();
 
-        // Show the Alert dialog and wait for the user's response
         Optional<ButtonType> result = dialog.showAndWait();
 
         // Stop the timer in case the user responded before the timeout
@@ -1258,7 +1228,7 @@ public class ConnectFourApp extends Application {
         TextField title = new TextField("HOW TO PLAY");
         title.setMouseTransparent(true);
         title.setFocusTraversable(false);
-        title.setEditable(false);  // Make it read-only
+        title.setEditable(false);
         title.setStyle(
                 "-fx-text-fill: white;"+
                 "-fx-font-size: 64;" +

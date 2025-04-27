@@ -19,9 +19,9 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.UUID;
 
-/**
- * Handles one client socket: LOGIN handshake, then chat/move routing.
- */
+
+//Handles one client socket: LOGIN handshake, then chat/move routing.
+
 public class ConnectionHandler implements Runnable {
     private final Socket socket;
     private final Server server;
@@ -43,7 +43,7 @@ public class ConnectionHandler implements Runnable {
         this.server = server;
     }
 
-    /** Thread‐safe send */
+//     Thread‐safe send
     public void sendMessage(Message msg) {
         try {
             out.writeObject(msg);
@@ -51,7 +51,7 @@ public class ConnectionHandler implements Runnable {
         } catch (IOException ignored) { }
     }
 
-    /** Blocking receive */
+//    Blocking receive
     public Message readMessage() throws IOException, ClassNotFoundException {
         return (Message) in.readObject();
     }
@@ -63,11 +63,11 @@ public class ConnectionHandler implements Runnable {
     @Override
     public void run() {
         try {
-            // 1) Set up streams (out first!)
+            // Set up streams (out first!)
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
-            // 2) LOGIN handshake
+            // LOGIN handshake
             while (true) {
                 Message msg = readMessage();
                 switch (msg.getType()) {
@@ -115,12 +115,9 @@ public class ConnectionHandler implements Runnable {
                                     uname
                             ));
                         } else {
-                            // 1) Mark this handler as logged‐in
                             this.username = uname;
-                            // 2) Load the real User (with stats) from disk
                             User realUser = userService.validateCredentials(uname, pwd);
                             this.user = realUser;
-                            // 3) Build a CSV payload matching your players.txt format
                             String payload = String.join(",",
                                     realUser.getDisplayName(),
                                     realUser.getUsername(),
@@ -132,7 +129,6 @@ public class ConnectionHandler implements Runnable {
                                     String.valueOf(realUser.getDrawCount())
                             );
 
-                            // 4) Send it back as LOGIN_SUCCESS
                             sendMessage(new Message(
                                     MessageType.LOGIN_SUCCESS,
                                     payload,
@@ -158,7 +154,7 @@ public class ConnectionHandler implements Runnable {
                 }
             }
 
-            // 3) Main loop: route CHAT, MOVE, DELETE_ACCOUNT, and other messages
+            //Main loop: route CHAT, MOVE, DELETE_ACCOUNT, and other messages
             while (true) {
                 Message msg = readMessage();
                 switch (msg.getType()) {
@@ -214,9 +210,7 @@ public class ConnectionHandler implements Runnable {
                                     "SERVER",
                                     user
                             ));
-                            // Log the deletion
                             System.out.println(user + " has deleted their account.");
-                            // Close the socket and exit the loop
                             try {
                                 socket.close();
                             } catch (IOException ignore) {
@@ -255,7 +249,6 @@ public class ConnectionHandler implements Runnable {
                     case LIST_LEADERBOARD:
                         // get every user, drop anyone with zero points, sort desc by score
                         List<User> top = userService.getLeaderboard();
-                        // build a payload string, e.g. "Alice|4100;Bob|4000;…"
                         payload = top.stream()
                                 .map(u -> u.getUsername() + "|" + u.getScore())
                                 .collect(Collectors.joining(";"));
@@ -286,12 +279,12 @@ public class ConnectionHandler implements Runnable {
                                         username
                                 ));
                             } else {
-                                // 1) join
+                                // join
                                 room.addPlayer(this.user);
-                                this.currentRoomId = roomId;      // ← mark “in this room”
+                                this.currentRoomId = roomId;
                                 System.out.println(username + " joined " + roomId);
 
-                                // 2) if it's now full, start the game:
+                                // if it's now full, start the game:
                                 if (!room.isOpenForPlayers()) {
                                     User u1 = room.getPlayers().get(0);
                                     User u2 = room.getPlayers().get(1);

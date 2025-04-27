@@ -32,7 +32,7 @@ public class GameSession implements Runnable {
         this.roomId  = roomId;
     }
 
-    /** Called by ConnectionHandler whenever a MESSAGE arrives. */
+    // Called by ConnectionHandler whenever a MESSAGE arrives.
     public void handleMessage(Message m) {
         MessageType t = m.getType();
         switch (t) {
@@ -92,8 +92,6 @@ public class GameSession implements Runnable {
                         p2.sendMessage(restart);
                         break;
                     }
-                    // busy‐wait; could replace with wait/notify or another queue
-                    //Thread.sleep(100);
                 }
             }
         } catch (InterruptedException e) {

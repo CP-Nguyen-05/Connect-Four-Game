@@ -123,17 +123,17 @@ public class RegisterController {
             Message reply = conn.receiveMessage();
             if (reply.getType() == MessageType.REGISTER_SUCCESS) {
                 messageLabel.setText("Registration succeeded. Please log in.");
-                messageLabel.setStyle("-fx-text-fill: #F98C02;"); // ORANGE success
+                messageLabel.setStyle("-fx-text-fill: #F98C02;");
                 usernameField.clear();
                 passwordField.clear();
                 confirmField.clear();
             } else {
                 messageLabel.setText(reply.getContent());
-                messageLabel.setStyle("-fx-text-fill: #FF6368;"); // RED error
+                messageLabel.setStyle("-fx-text-fill: #FF6368;");
             }
         } catch (Exception ex) {
             messageLabel.setText("Server error: " + ex.getMessage());
-            messageLabel.setStyle("-fx-text-fill: #FF6368;"); // RED error
+            messageLabel.setStyle("-fx-text-fill: #FF6368;");
         }
     }
 

@@ -9,17 +9,10 @@ import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.util.List;
 
-/**
- * Stores users in a text file, one user per line:
- * displayName,username,password,score,gamesPlayed,winCount,lossCount,drawCount
- *
- * Example line:
- *   Alice,alice,password123,0,0,0,0,0
- */
 public class UserDataStore {
     private static final String FILE_PATH = "PlayerData/players.txt";
 
-    /** Reads all users out of users.txt (or returns empty list if file missing). */
+//     Reads all users out of users.txt (or returns empty list if file missing).
     public List<User> loadUsers() {
         File f = new File(FILE_PATH);
         List<User> users = new ArrayList<>();
@@ -51,12 +44,11 @@ public class UserDataStore {
         return users;
     }
 
-    /** Overwrites users.txt so each line is exactly 8 comma‑separated fields. */
+//    Overwrites users.txt so each line is exactly 8 comma‑separated fields.
     public void saveUsers(List<User> users) {
         File f = new File(FILE_PATH);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_PATH))) {
             for (User u : users) {
-                // This will produce lines like:
                 // Alice,alice,password123,0,0,0,0,0
                 String line = String.join(",",
                         u.getDisplayName(),

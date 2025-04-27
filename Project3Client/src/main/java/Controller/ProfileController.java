@@ -124,7 +124,7 @@ public class ProfileController {
         app.applyGlobalStyles(scene);
     }
 
-    /** Call this right before showing the profile scene. */
+    // Call this right before showing the profile scene.
     public void displayProfileInfo(User user) {
         usernameOnlyLabel.setText(user.getUsername() + "'S PROFILE");
         scoreLabel.setText(String.valueOf(user.getScore()));
@@ -136,16 +136,16 @@ public class ProfileController {
 
     private HBox createStatRow(String labelText, Label valueLabel) {
         Label label = new Label(labelText);
-        label.setMinWidth(150);  // consistent width for titles
-        label.setAlignment(Pos.CENTER_LEFT);  // left-align title
+        label.setMinWidth(150);
+        label.setAlignment(Pos.CENTER_LEFT);
         label.setStyle("-fx-text-fill: #FFF");
 
         valueLabel.setMaxWidth(Double.MAX_VALUE);
-        valueLabel.setAlignment(Pos.CENTER_RIGHT);  // right-align value
+        valueLabel.setAlignment(Pos.CENTER_RIGHT);
 
         HBox row = new HBox(10, label, valueLabel);
         row.setAlignment(Pos.CENTER);
-        HBox.setHgrow(valueLabel, Priority.ALWAYS);  // allow value label to grow
+        HBox.setHgrow(valueLabel, Priority.ALWAYS);
         return row;
     }
 
