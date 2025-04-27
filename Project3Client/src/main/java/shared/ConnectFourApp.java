@@ -841,7 +841,6 @@ public class ConnectFourApp extends Application {
                             Color fill = msg.getSender().equals(currentUser.getUsername())
                                     ? Color.web("#0087F1")
                                     : Color.web("#FF6368");
-//                            Platform.runLater(() -> cells[r][c].setFill(fill));
                             Platform.runLater(() ->{
                                     fillCell(cells[r][c], fill);
                                     resetAllHighlights(cells);
