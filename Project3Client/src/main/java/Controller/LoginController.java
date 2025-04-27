@@ -93,6 +93,7 @@ public class LoginController {
         String u = usernameField.getText().trim();
         String p = passwordField.getText();
         passwordField.clear();
+        messageLabel.setText("");
         if (u.isEmpty() || p.isEmpty()) {
             messageLabel.setText("Enter both username & password");
             return;

@@ -184,7 +184,7 @@ public class RoomController {
         app.showRoomScene();
     }
 
-    /** Quick‑join: pick the first open room, or prompt to create one. */
+    /** Quick‑join: pick the first open room or prompt to create one. */
     public void handleQuickJoin() {
         hostRoom = true;
         app.setMyTurn(hostRoom);
@@ -202,14 +202,25 @@ public class RoomController {
                 confirm.setContentText("CREATE A NEW ROOM?");
 
                 DialogPane pane = confirm.getDialogPane();
-
                 pane.setStyle(
                         "-fx-background-color: #1D2529;" +
-                        "-fx-font-family: '" + ConnectFourApp.globalFontFamily + "';" +
-                        "-fx-font-size: 18px;" +
-                        "-fx-text-fill: #FFF;"
+                                "-fx-font-family: '" + ConnectFourApp.globalFontFamily + "';" +
+                                "-fx-font-size: 18px;"
                 );
 
+                // Make the header text white
+                Label header = (Label) pane.lookup(".header-panel .label");
+                if (header != null) {
+                    header.setStyle("-fx-text-fill: white;");
+                }
+
+                // Make the content text white
+                Label content = (Label) pane.lookup(".content.label");
+                if (content != null) {
+                    content.setStyle("-fx-text-fill: white;");
+                }
+
+                // Style buttons
                 pane.lookupButton(ButtonType.OK).setStyle(
                         "-fx-background-color: #F24339;" +
                                 "-fx-text-fill: white;" +
@@ -225,6 +236,7 @@ public class RoomController {
                         .filter(ButtonType.OK::equals)
                         .ifPresent(__ -> handleCreateRoom());
             });
+
         }
     }
 
