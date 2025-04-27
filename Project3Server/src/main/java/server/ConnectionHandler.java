@@ -277,14 +277,18 @@ public class ConnectionHandler implements Runnable {
                         return;
                     case LIST_ROOMS:
                         List<Room> rooms = server.getRoomManager().getOpenRooms();
-                        // payload format example: room1|0|2|true;room2|1|2|true;room3|2|2|false
-                        String payload = rooms.stream()
+                        int userCount = server.getClients().size();
+
+                        String roomsPart = rooms.stream()
                                 .map(r -> String.join("|",
                                         r.getRoomId(),
-                                        Integer.toString(r.getPlayers().size()),
-                                        Integer.toString(r.getMaxPlayerCapacity()),
-                                        Boolean.toString(r.isOpenForPlayers())))
+                                        String.valueOf(r.getPlayers().size()),
+                                        String.valueOf(r.getMaxPlayerCapacity()),
+                                        String.valueOf(r.isOpenForPlayers())
+                                ))
                                 .collect(Collectors.joining(";"));
+
+                        String payload = userCount + ";" + roomsPart;
                         sendMessage(new Message(
                                 UUID.randomUUID().toString(),
                                 MessageType.ROOM_LIST,

@@ -73,6 +73,8 @@ public class ConnectFourApp extends Application {
     private RoomController roomCtrl;
     private final List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
+    public Label onlineCountField;
+
 
     private boolean gameOver = false;
 
@@ -145,6 +147,12 @@ public class ConnectFourApp extends Application {
         // 2) Clear any user state
         currentUser = null;
         currentRoomId = null;
+        roomScene    = null;
+        waitingScene = null;
+        gameScene    = null;
+        resultScene  = null;
+        roomCtrl     = null;
+
 
         // 3) Go back to the login screen
         showLoginScene();
@@ -247,6 +255,11 @@ public class ConnectFourApp extends Application {
     }
 
     public void showRoomScene() {
+        if (onlineCountField == null) {
+            onlineCountField = new Label("Online: 0");
+            onlineCountField.setStyle("-fx-text-fill: white; -fx-font-size: 36px;");
+        }
+        onlineCountField.setStyle("-fx-text-fill: white; -fx-font-size: 36px;");
         singlePlayerMode = false;
         gameOver         = false;
         if (roomScene == null) {
@@ -342,6 +355,7 @@ public class ConnectFourApp extends Application {
 
             VBox root = new VBox(10,
                     roomTitle,
+                    onlineCountField,
                     idRow,
                     roomListArea,
                     messageLabel,
@@ -356,6 +370,15 @@ public class ConnectFourApp extends Application {
             Platform.runLater(() -> primaryStage.getScene().getRoot().requestFocus());
         }
         else {
+//            roomCtrl = new RoomController(
+//                    conn,
+//                    currentUser,
+//                    this,
+//                    availableRooms,
+//                    roomListArea,
+//                    roomIdField,
+//                    messageLabel
+//            );
             // ** re‑enable and clear them any time you come back **
             roomListArea.setDisable(false);
             roomIdField.setDisable(false);

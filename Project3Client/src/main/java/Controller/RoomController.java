@@ -47,8 +47,6 @@ public class RoomController {
         this.roomIdField    = roomIdField;
         this.messageLabel   = messageLabel;
     }
-
-    /** Fetches open rooms from the server and updates the list. */
     public void fetchAvailableRooms() {
         messageLabel.setText("Loading rooms...");
         new Thread(() -> {
@@ -67,7 +65,13 @@ public class RoomController {
                     reply = conn.receiveMessage();
                 } while (reply.getType() != MessageType.ROOM_LIST);
 
-                List<RoomView> parsed = Arrays.stream(reply.getContent().split(";", -1))
+                // ** parse the combined payload **
+                String[] parts = reply.getContent().split(";", -1);
+                int onlineCount = Integer.parseInt(parts[0]);
+
+                // parse rooms
+                List<RoomView> parsed = Arrays.stream(parts)
+                        .skip(1)
                         .filter(s -> !s.isBlank())
                         .map(chunk -> {
                             String[] p = chunk.split("\\|", -1);
@@ -81,18 +85,17 @@ public class RoomController {
                         .collect(Collectors.toList());
 
                 Platform.runLater(() -> {
+                    // update online count
+                    app.onlineCountField.setText("Online: " + onlineCount);
+
+                    // update room list
                     rooms.clear();
                     rooms.addAll(parsed);
-
                     StringBuilder sb = new StringBuilder();
                     for (RoomView rv : rooms) {
-                        String status;
-                        if (rv.isOpen()) {
-                            status = String.format("(%d/%d)", rv.getCurrentPlayerCount(), rv.getMaxPlayerCapacity());
-                        } else {
-                            status = "[FULL]";
-                        }
-
+                        String status = rv.isOpen()
+                                ? String.format("(%d/%d)", rv.getCurrentPlayerCount(), rv.getMaxPlayerCapacity())
+                                : "[FULL]";
                         sb.append(String.format("%-40s %10s\n", rv.getRoomId(), status));
                     }
                     roomListArea.setText(sb.toString());
@@ -107,6 +110,7 @@ public class RoomController {
             }
         }, "FetchRooms-Thread").start();
     }
+
 
     /** Creates a new room and waits for GAME_START. */
     public void handleCreateRoom() {

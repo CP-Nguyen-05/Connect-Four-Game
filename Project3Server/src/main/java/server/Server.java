@@ -9,6 +9,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Set;
 import java.util.Map;
+import java.util.Collections;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -83,5 +85,9 @@ public class Server {
 				.filter(ch -> ch.getUsername().equals(username))
 				.findFirst()
 				.orElse(null);
+	}
+
+	public Set<ConnectionHandler> getClients() {
+		return Collections.unmodifiableSet(clients);
 	}
 }
