@@ -200,18 +200,21 @@ public class ConnectFourApp extends Application {
 
         Button lanButton = new Button("LAN PLAY");
         lanButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: white; -fx-font-weight: bold;");
-        lanButton.setPrefWidth(100);
+        lanButton.setPrefWidth(120);
         Button vsComputerBtn = new Button("COMPUTER");
-        vsComputerBtn.setPrefWidth(100);
+        vsComputerBtn.setPrefWidth(120);
         vsComputerBtn.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;");
         Button howToPlayButton = new Button("HOW TO PLAY");
-        howToPlayButton.setPrefWidth(100);
+        howToPlayButton.setPrefWidth(120);
         howToPlayButton.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-weight: bold;");
         Button profileButton = new Button("PROFILE");
-        profileButton.setPrefWidth(100);
+        profileButton.setPrefWidth(120);
         profileButton.setStyle("-fx-background-color: #3E926F; -fx-text-fill: white; -fx-font-weight: bold;");
+        Button leaderBoardButton = new Button("LEADERBOARD");
+        leaderBoardButton.setPrefWidth(120);
+        leaderBoardButton.setStyle("-fx-background-color: #ba5131; -fx-text-fill: white; -fx-font-weight: bold;");
         Button logoutButton = new Button("LOGOUT");
-        logoutButton.setPrefWidth(100);
+        logoutButton.setPrefWidth(120);
         logoutButton.setStyle("-fx-background-color: #F24339; -fx-text-fill: white; -fx-font-weight: bold;");
 
         lanButton.setOnAction(e -> {
@@ -230,8 +233,9 @@ public class ConnectFourApp extends Application {
         howToPlayButton.setOnAction(e -> showHowToPlayScene());
         profileButton.setOnAction(e -> showProfileScene());
         logoutButton.setOnAction(e -> logout());
+        leaderBoardButton.setOnAction(e -> showLeaderBoardScene());
 
-        VBox root = new VBox(10, lanButton, vsComputerBtn, howToPlayButton, profileButton, logoutButton);
+        VBox root = new VBox(15, lanButton, vsComputerBtn, howToPlayButton, profileButton, leaderBoardButton, logoutButton);
         root.setStyle(
                 "-fx-background-color: #374A4D;" +
                         "-fx-border-width: 3;" +
@@ -241,8 +245,8 @@ public class ConnectFourApp extends Application {
         );
         root.setAlignment(Pos.CENTER);
         root.setMaxWidth(180);
-        root.setMaxHeight(250);
-        root.setPrefHeight(300);
+        root.setMaxHeight(275);
+        root.setPrefHeight(275);
         root.setMinHeight(250);
 
 
@@ -257,6 +261,78 @@ public class ConnectFourApp extends Application {
         Scene scene = new Scene(background, 1600, 900);
         primaryStage.setScene(scene);
         applyGlobalStyles(scene);
+    }
+
+    public void showLeaderBoardScene() {
+        TextField title = new TextField("LEADERBOARD");
+        title.setMouseTransparent(true);
+        title.setFocusTraversable(false);
+        title.setEditable(false);  // Make it read-only
+        title.setStyle(
+                "-fx-text-fill: white;"+
+                        "-fx-font-size: 64;" +
+                        "-fx-background-color: #AE65FF;"+
+                        "-fx-border-radius: 10;" +
+                        "-fx-background-radius: 10;" +
+                        " -fx-border-color: #374A4D;"
+        );
+        title.setMinWidth(1000);
+        title.setMaxWidth(300);
+        title.setAlignment(Pos.CENTER);
+
+        HBox titleRow = new HBox(title);
+        titleRow.setAlignment(Pos.CENTER);
+
+        TextArea howTo = new TextArea(
+                "- Two players take turns dropping discs into columns.\n\n" +
+                        "- Discs fall to the lowest available space in the selected column.\n\n" +
+                        "- The goal is to connect four of your discs in a row:\n\n" +
+                        "        - Horizontally\n\n" +
+                        "        - Vertically\n\n" +
+                        "        - Diagonally\n\n" +
+                        "- The first player to connect four wins the game.\n\n" +
+                        "- If the board is full and no one wins, it’s a draw."
+        );
+        howTo.setEditable(false);
+        howTo.setMouseTransparent(true);
+        howTo.setFocusTraversable(false);
+        howTo.setPrefWidth(1000);
+        howTo.setMaxWidth(1000);
+        howTo.setPrefHeight(650);
+        howTo.setMaxHeight(650);
+        howTo.setStyle(
+                "-fx-control-inner-background: #1D2529;" +
+                        "-fx-background-color: #1D2529;" +
+                        "-fx-border-color: #374A4D;" +
+                        "-fx-border-width: 2;" +
+                        "-fx-focus-color: transparent;" +
+                        "-fx-faint-focus-color: transparent;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-caret-color: transparent;" +
+                        "-fx-font-size: 36px;"
+        );
+
+        VBox container = new VBox(howTo);
+        container.setAlignment(Pos.CENTER);
+        container.setPrefWidth(900);
+
+
+        Button back = new Button("BACK");
+        back.setStyle("-fx-background-color: #F98C02; -fx-text-fill: white; -fx-font-size: 36px");
+        back.setPrefWidth(120);
+        back.setPrefHeight(40);
+        back.setOnAction(e -> showOptionMenuScene());
+
+        HBox buttonBox = new HBox(back);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(10, titleRow, container, buttonBox);
+        root.setPadding(new Insets(20));
+        primaryStage.setScene(new Scene(root, 1600, 900));
+        root.setStyle("-fx-background-color: #374A4D;");
+        applyGlobalStyles(primaryStage.getScene());
     }
 
     public void showRoomScene() {
