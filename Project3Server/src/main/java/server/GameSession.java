@@ -48,12 +48,10 @@ public class GameSession implements Runnable {
             case REMATCH_REJECT:
                 // immediately end session and tell both sides
                 Message cancel = new Message(
-                        UUID.randomUUID().toString(),
                         MessageType.ROOM_CANCELLED,
                         roomId,
                         "SERVER",
-                        null,
-                        System.currentTimeMillis()
+                        null
                 );
                 p1.sendMessage(cancel);
                 p2.sendMessage(cancel);
@@ -85,12 +83,10 @@ public class GameSession implements Runnable {
                         keepPlaying = true;
                         resetBoard();
                         Message restart = new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.GAME_START,
                                 roomId,
                                 "SERVER",
-                                null,
-                                System.currentTimeMillis()
+                                null
                         );
                         p1.sendMessage(restart);
                         p2.sendMessage(restart);
@@ -124,12 +120,10 @@ public class GameSession implements Runnable {
                     }
                     // relay to both
                     Message m2 = new Message(
-                            UUID.randomUUID().toString(),
                             MessageType.MOVE,
                             col + "," + row,
                             current.getUsername(),
-                            null,
-                            System.currentTimeMillis()
+                            null
                     );
                     p1.sendMessage(m2);
                     p2.sendMessage(m2);
@@ -207,14 +201,16 @@ public class GameSession implements Runnable {
         System.out.println(win.getUsername()+ " won game in "+ roomId);
         System.out.println("Game over in "+ roomId);
         win.sendMessage(new Message(
-                UUID.randomUUID().toString(),
                 MessageType.GAME_END,
-                "YOU_WIN","SERVER",win.getUsername(),System.currentTimeMillis()
+                "YOU_WIN",
+                "SERVER",
+                win.getUsername()
         ));
         lose.sendMessage(new Message(
-                UUID.randomUUID().toString(),
                 MessageType.GAME_END,
-                "YOU_LOSE","SERVER",lose.getUsername(),System.currentTimeMillis()
+                "YOU_LOSE",
+                "SERVER",
+                lose.getUsername()
         ));
         List<User> all = ds.loadUsers();
         for (User u : all) {
@@ -237,9 +233,10 @@ public class GameSession implements Runnable {
     private void endDraw() {
         // notify
         Message draw = new Message(
-                UUID.randomUUID().toString(),
                 MessageType.GAME_END,
-                "DRAW","SERVER",null,System.currentTimeMillis()
+                "DRAW",
+                "SERVER",
+                null
         );
         p1.sendMessage(draw);
         p2.sendMessage(draw);
@@ -263,13 +260,20 @@ public class GameSession implements Runnable {
     }
 
     private Message gameStartMsg() {
-        return new Message(UUID.randomUUID().toString(),
-                MessageType.GAME_START, roomId,"SERVER",null,System.currentTimeMillis());
+        return new Message(
+                MessageType.GAME_START,
+                roomId,
+                "SERVER",
+                null
+        );
     }
 
     private Message error(String text) {
-        return new Message(UUID.randomUUID().toString(),
-                MessageType.ERROR, text, "SERVER",
-                current.getUsername(), System.currentTimeMillis());
+        return new Message(
+                MessageType.ERROR,
+                text,
+                "SERVER",
+                current.getUsername()
+        );
     }
 }

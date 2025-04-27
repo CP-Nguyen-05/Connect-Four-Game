@@ -1,4 +1,5 @@
 package Controller;
+
 import javafx.geometry.Pos;
 import javafx.scene.text.Font;
 import shared.ClientConnection;
@@ -12,118 +13,117 @@ import javafx.scene.layout.*;
 import java.util.UUID;
 
 public class LoginController {
-    private final ConnectFourApp app;
-    private Scene scene;
-
-    private TextField    usernameField;
-    private PasswordField passwordField;
-    private Label         messageLabel;
+    private ConnectFourApp myApp;
+    private Scene myLoginScene;
+    private TextField usernameTextBox;
+    private PasswordField passwordTextBox;
+    private Label errorMessageLabel;
 
     public LoginController(ConnectFourApp app) {
-        this.app = app;
-        buildScene();
+        myApp = app;
+        buildLoginScene();
     }
 
-    private void buildScene() {
-        // Title label styled like original
-        Label title = new Label("LOGIN");
-        title.setFont(Font.font(ConnectFourApp.globalFontFamily, 48));
-        title.setStyle("-fx-text-fill: #0087F1");
+    // Build the login UI
+    private void buildLoginScene() {
+        Label titleLabel = new Label("LOGIN");
+        titleLabel.setFont(Font.font(ConnectFourApp.globalFontFamily, 48));
+        titleLabel.setStyle("-fx-text-fill: #0087F1");
 
-        HBox titleBox = new HBox(title);
-        titleBox.setAlignment(Pos.CENTER_LEFT);
+        HBox titleContainer = new HBox();
+        titleContainer.getChildren().add(titleLabel);
+        titleContainer.setAlignment(Pos.CENTER_LEFT);
 
-        // Input fields
-        usernameField = new TextField();
-        usernameField.setPromptText("Username");
+        usernameTextBox = new TextField();
+        usernameTextBox.setPromptText("Enter Username");
 
-        passwordField = new PasswordField();
-        passwordField.setPromptText("Password");
+        passwordTextBox = new PasswordField();
+        passwordTextBox.setPromptText("Enter Password");
 
-        // Buttons
-        Button loginBtn = new Button("LOGIN");
-        loginBtn.setMaxWidth(Double.MAX_VALUE);
-        loginBtn.setStyle("-fx-background-color: #0087F1; -fx-text-fill: #FFF; -fx-font-weight: bold;");
+        Button loginButton = new Button("LOGIN");
+        loginButton.setMaxWidth(1000);
+        loginButton.setStyle("-fx-background-color: #0087F1; -fx-text-fill: #FFF; -fx-font-weight: bold;");
 
-        Button regBtn = new Button("Need an account? Sign up");
-        regBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #0087F1; -fx-underline: false; -fx-cursor: hand;");
+        Button registerButton = new Button("Need an account? Sign up");
+        registerButton.setStyle("-fx-background-color: transparent; -fx-text-fill: #0087F1;");
 
-        // Message label
-        messageLabel = new Label();
-        HBox messageBox = new HBox(messageLabel);
-        messageLabel.setStyle("-fx-text-fill: #F24339");
-        messageBox.setAlignment(Pos.CENTER_LEFT);
+        errorMessageLabel = new Label("");
+        HBox messageContainer = new HBox();
+        messageContainer.getChildren().add(errorMessageLabel);
+        errorMessageLabel.setStyle("-fx-text-fill: #F24339");
+        messageContainer.setAlignment(Pos.CENTER_LEFT);
 
         // Button actions
-        loginBtn.setOnAction(e -> doLogin());
-        regBtn.setOnAction(e -> app.showRegisterScene());
+        loginButton.setOnAction(event -> {
+            doLogin();
+        });
 
-        // Form layout
-        VBox form = new VBox(10,
-                titleBox,
-                messageBox,
-                usernameField,
-                passwordField,
-                loginBtn,
-                regBtn
-        );
-        form.setAlignment(Pos.CENTER);
-        form.setMaxWidth(500);
-        form.setMaxHeight(200);
-        form.setPadding(new Insets(20));
-        form.setStyle("-fx-background-color: #1D2529; -fx-border-color: #374A4D; -fx-border-radius: 10; -fx-background-radius: 10;");
+        registerButton.setOnAction(event -> {
+            myApp.showRegisterScene();
+        });
 
-        // Root layout
-        StackPane root = new StackPane(form);
-        root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #374A4D;");
-        root.requestFocus();
+        VBox formLayout = new VBox();
+        formLayout.setSpacing(10);
+        formLayout.getChildren().add(titleContainer);
+        formLayout.getChildren().add(messageContainer);
+        formLayout.getChildren().add(usernameTextBox);
+        formLayout.getChildren().add(passwordTextBox);
+        formLayout.getChildren().add(loginButton);
+        formLayout.getChildren().add(registerButton);
+        formLayout.setAlignment(Pos.CENTER);
+        formLayout.setMaxWidth(500);
+        formLayout.setMaxHeight(200);
+        formLayout.setPadding(new Insets(20));
+        formLayout.setStyle("-fx-background-color: #1D2529; -fx-border-color: #374A4D; -fx-border-radius: 10; -fx-background-radius: 10;");
 
-        // Set scene
-        scene = new Scene(root, 1600, 900);
-        app.applyGlobalStyles(scene);
+        StackPane rootLayout = new StackPane();
+        rootLayout.getChildren().add(formLayout);
+        rootLayout.setAlignment(Pos.CENTER);
+        rootLayout.setStyle("-fx-background-color: #374A4D;");
 
+        myLoginScene = new Scene(rootLayout, 1600, 900);
+        myApp.applyGlobalStyles(myLoginScene);
     }
 
     public Scene getScene() {
-        return scene;
+        return myLoginScene;
     }
 
+    // Handle login attempt
     private void doLogin() {
-        String u = usernameField.getText().trim();
-        String p = passwordField.getText();
-        passwordField.clear();
-        messageLabel.setText("");
+        String username = usernameTextBox.getText();
+        String password = passwordTextBox.getText();
+        passwordTextBox.setText("");
+        errorMessageLabel.setText("");
 
-        if (u.isEmpty() || p.isEmpty()) {
-            messageLabel.setText("Enter both username & password");
-            messageLabel.setStyle("-fx-text-fill: #FF6368;");
+        if (username.equals("") || password.equals("")) {
+            errorMessageLabel.setText("Please enter username and password!");
+            errorMessageLabel.setStyle("-fx-text-fill: #FF6368;");
             return;
         }
 
         try {
-            ClientConnection conn = app.getOrCreateConnection();
-            Message m = new Message(
-                    UUID.randomUUID().toString(),
+            ClientConnection connection = myApp.getOrCreateConnection();
+            Message loginMessage = new Message(
                     MessageType.LOGIN,
-                    p, u, null,
-                    System.currentTimeMillis()
+                    password,
+                    username,
+                    null
             );
-            conn.sendMessage(m);
+            connection.sendMessage(loginMessage);
 
-            Message reply = conn.receiveMessage();
-            if (reply.getType() == MessageType.LOGIN_SUCCESS) {
-                messageLabel.setText("Login successful!");
-                messageLabel.setStyle("-fx-text-fill: #0087F1;");
-                app.finishLogin(reply.getContent());
+            Message serverReply = connection.receiveMessage();
+            if (serverReply.getType() == MessageType.LOGIN_SUCCESS) {
+                errorMessageLabel.setText("Login worked!");
+                errorMessageLabel.setStyle("-fx-text-fill: #0087F1;");
+                myApp.finishLogin(serverReply.getContent());
             } else {
-                messageLabel.setText(reply.getContent());
-                messageLabel.setStyle("-fx-text-fill: #FF6368;");
+                errorMessageLabel.setText(serverReply.getContent());
+                errorMessageLabel.setStyle("-fx-text-fill: #FF6368;");
             }
-        } catch (Exception ex) {
-            messageLabel.setText("Server error. " + ex.getMessage());
-            messageLabel.setStyle("-fx-text-fill: #FF6368;");
+        } catch (Exception e) {
+            errorMessageLabel.setText("Error connecting to server: " + e.getMessage());
+            errorMessageLabel.setStyle("-fx-text-fill: #FF6368;");
         }
     }
-
 }
