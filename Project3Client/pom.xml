@@ -15,8 +15,6 @@
   </properties>
 
  <dependencies>
-
-
     <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
@@ -36,11 +34,7 @@
         <artifactId>javafx-fxml</artifactId>
         <version>23</version>
     </dependency>
-
-
-
-</dependencies>
-
+ </dependencies>
 <build>
     <plugins>
          <plugin>

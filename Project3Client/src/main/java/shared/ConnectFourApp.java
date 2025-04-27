@@ -18,7 +18,6 @@ import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -40,13 +39,13 @@ import javafx.beans.binding.Bindings;
 import java.util.Random;
 import javafx.animation.PauseTransition;
 
-
 import java.util.Optional;
 
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 
+import javax.print.attribute.standard.Media;
 import java.io.IOException;
 
 public class ConnectFourApp extends Application {
@@ -240,6 +239,7 @@ public class ConnectFourApp extends Application {
         root.setPrefHeight(300);
         root.setMinHeight(250);
 
+
         VBox layout = new VBox(50, title, root);  // 50 px space between title and menu
         layout.setAlignment(Pos.CENTER);
         VBox.setMargin(title, new Insets(0, 0, 0, 0));
@@ -291,7 +291,6 @@ public class ConnectFourApp extends Application {
                     " -fx-border-radius: 10;" +
                     " -fx-background-radius: 10;" +
                     " -fx-border-color: #374A4D;" +
-                    "-fx-font-family: '" + ConnectFourApp.globalFontFamily + "';" +
                     "-fx-font-size: 48px;" +
                     "-fx-border-width: 2;" +
                     "-fx-focus-color: transparent;" +
@@ -305,7 +304,7 @@ public class ConnectFourApp extends Application {
             // 2) Reuse your existing input controls
             roomIdField = new TextField();
             roomIdField.setPromptText("Enter room ID");
-
+            roomIdField.setPrefHeight(40);
             messageLabel   = new Label();
 
             Button refreshButton = new Button("REFRESH");
@@ -317,6 +316,7 @@ public class ConnectFourApp extends Application {
             quickJoinButton.setPrefWidth(190);
             quickJoinButton.setPrefHeight(40);
             Button joinByIdButton = new Button("JOIN");
+            joinByIdButton.setPrefHeight(40);
             joinByIdButton.setStyle("-fx-background-color: #FF6368; -fx-text-fill: white; -fx-font-weight: bold;  -fx-font-size: 24px");
             Button createButton = new Button("CREATE");
             createButton.setStyle("-fx-background-color: #7D52AE; -fx-text-fill: white; -fx-font-weight: bold;  -fx-font-size: 36px");
@@ -343,7 +343,6 @@ public class ConnectFourApp extends Application {
             quickJoinButton.setOnAction(e -> roomCtrl.handleQuickJoin());
             joinByIdButton.setOnAction(e -> roomCtrl.handleJoinRoomById());
             createButton.setOnAction(e -> roomCtrl.handleCreateRoom());
-//            spectateBtn .setOnAction(e -> roomCtrl.handleJoinAsSpectator());
             backButton.setOnAction(e -> showOptionMenuScene());
 
             HBox idRow = new HBox(8, roomIdField, joinByIdButton);
@@ -470,7 +469,7 @@ public class ConnectFourApp extends Application {
                         Circle c = cells[r][column];
                         // only color the empty slots
                         if (c.getFill().equals(Color.LIGHTGRAY)) {
-                            c.setFill(Color.BLACK);
+                            c.setFill(Color.web("1D2529")); // NEED TO FIX
                         }
                     }
                 });
@@ -623,6 +622,8 @@ public class ConnectFourApp extends Application {
         statusField.setStyle("-fx-font-size: 36; -fx-text-fill: #FFF; -fx-background-color: #2f3a3c; -fx-border-radius: 5; -fx-border-color: #182325;-fx-background-radius: 10; -fx-border-width: 5;");
         statusField.setAlignment(Pos.CENTER);
         statusField.setPrefWidth(250);
+        statusField.setFocusTraversable(true);
+        statusField.setMouseTransparent(true);
         statusField.setMaxWidth(250);
         statusField.setEditable(false);
         statusField.setMouseTransparent(true);
@@ -652,8 +653,7 @@ public class ConnectFourApp extends Application {
         chatPane.setStyle(
                 "-fx-background-color: #2f3a3c;" +
                 "-fx-background-radius: 10;" +
-                "-fx-border-radius: 10;" +
-                "-fx-border-color: #a56e00"
+                "-fx-border-radius: 10;"
                 );
 
         // 4) Lay everything out
@@ -671,6 +671,12 @@ public class ConnectFourApp extends Application {
         primaryStage.setScene(gameScene);
         applyGlobalStyles(primaryStage.getScene());
         primaryStage.show();
+
+        if (singlePlayerMode) {
+            chatInput.setDisable(true);
+            sendButton.setDisable(true);
+            sendButton.setStyle("-fx-background-color: #182325; -fx-text-fill: #FFF; -fx-font-size: 24;");
+        }
 
         // 5) Listener thread: paint moves, chat, end, *and* flip turns
         if (!singlePlayerMode) {
