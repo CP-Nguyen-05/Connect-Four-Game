@@ -94,16 +94,15 @@ public class LoginController {
         String p = passwordField.getText();
         passwordField.clear();
         messageLabel.setText("");
+
         if (u.isEmpty() || p.isEmpty()) {
             messageLabel.setText("Enter both username & password");
+            messageLabel.setStyle("-fx-text-fill: #FF6368;");
             return;
         }
 
         try {
-            // get or open the connection
             ClientConnection conn = app.getOrCreateConnection();
-
-            // send LOGIN
             Message m = new Message(
                     UUID.randomUUID().toString(),
                     MessageType.LOGIN,
@@ -112,15 +111,19 @@ public class LoginController {
             );
             conn.sendMessage(m);
 
-            // await reply
             Message reply = conn.receiveMessage();
             if (reply.getType() == MessageType.LOGIN_SUCCESS) {
+                messageLabel.setText("Login successful!");
+                messageLabel.setStyle("-fx-text-fill: #0087F1;");
                 app.finishLogin(reply.getContent());
             } else {
                 messageLabel.setText(reply.getContent());
+                messageLabel.setStyle("-fx-text-fill: #FF6368;");
             }
         } catch (Exception ex) {
             messageLabel.setText("Server error. " + ex.getMessage());
+            messageLabel.setStyle("-fx-text-fill: #FF6368;");
         }
     }
+
 }
