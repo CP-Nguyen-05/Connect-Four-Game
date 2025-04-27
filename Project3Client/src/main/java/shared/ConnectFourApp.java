@@ -497,9 +497,6 @@ public class ConnectFourApp extends Application {
             }
         }
 
-        HBox inputRow = new HBox(10, statusField);
-        inputRow.setAlignment(Pos.CENTER);
-
         // 3) Chat panel (unchanged)
         TextArea chatArea = new TextArea();
         chatArea.setEditable(false);
@@ -600,13 +597,15 @@ public class ConnectFourApp extends Application {
         turnLabel.setStyle("-fx-text-fill: #FFF; -fx-background-color: #182325; -fx-font-size: 36");
         turnLabel.setAlignment(Pos.BASELINE_LEFT);
 
-        Label whoTurnLabel = new Label(statusField.getText());
-        whoTurnLabel.setStyle("-fx-font-size: 36; -fx-text-fill: #FFF; -fx-background-color: #2f3a3c; -fx-border-radius: 5; -fx-border-color: #182325;-fx-background-radius: 10; -fx-border-width: 5;");
-        whoTurnLabel.setAlignment(Pos.CENTER);
-        whoTurnLabel.setPrefWidth(250);
-        whoTurnLabel.setMaxWidth(250);
+        statusField.setStyle("-fx-font-size: 36; -fx-text-fill: #FFF; -fx-background-color: #2f3a3c; -fx-border-radius: 5; -fx-border-color: #182325;-fx-background-radius: 10; -fx-border-width: 5;");
+        statusField.setAlignment(Pos.CENTER);
+        statusField.setPrefWidth(250);
+        statusField.setMaxWidth(250);
+        statusField.setEditable(false);
+        statusField.setMouseTransparent(true);
 
-        HBox whoTurn = new HBox(10, turnLabel, whoTurnLabel);
+
+        HBox whoTurn = new HBox(10, turnLabel, statusField);
         whoTurn.setAlignment(Pos.CENTER);
         whoTurn.setPrefWidth(390);
         whoTurn.setMaxWidth(390);
