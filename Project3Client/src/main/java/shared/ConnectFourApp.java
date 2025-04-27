@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import javafx.application.Application;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
@@ -69,7 +70,6 @@ public class ConnectFourApp extends Application {
     private String currentRoomId;
     private TextField roomIdField, statusField;
     private Label messageLabel;   // ← pull this out
-    private TextArea chatArea;
     private RoomController roomCtrl;
     private final List<RoomView> availableRooms = new ArrayList<>();
     private TextArea roomListArea;
@@ -183,7 +183,6 @@ public class ConnectFourApp extends Application {
         );
 
         Label title = new Label("CONNECT FOUR");
-//        title.setFont(Font.font(ConnectFourApp.globalFontFamily));  // Big title
         title.setStyle(
                 "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
@@ -433,21 +432,33 @@ public class ConnectFourApp extends Application {
 
     public void showGameScene() {
         final boolean isSingle = singlePlayerMode;
+
+        Image wallpaperImg = new Image(getClass().getResource("/backgrounds/game_wallpaper.png").toExternalForm());
+
+        BackgroundImage gameWallpaper = new BackgroundImage(
+                wallpaperImg,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                new BackgroundSize(100, 100, true, true, true, false)
+        );
+
         // 1) Build the static board
         GridPane board = new GridPane();
-        board.setHgap(5);
-        board.setVgap(5);
+        board.setHgap(20);
+        board.setVgap(20);
+        board.setAlignment(Pos.CENTER);
         board.setPadding(new Insets(10));
         Circle[][] cells = new Circle[6][7];
 
         statusField = new TextField();
         statusField.setEditable(false);
         statusField.setPrefWidth(120);
-        statusField.setText(myTurn ? "Your turn!" : "Opponent…");
+        statusField.setText(myTurn ? "YOUR" : "OPPONENT");
 
         for (int row = 0; row < 6; row++) {
             for (int col = 0; col < 7; col++) {
-                Circle cell = new Circle(20, Color.LIGHTGRAY);
+                Circle cell = new Circle(60, Color.LIGHTGRAY);
                 cell.setStroke(Color.DARKGRAY);
                 cells[row][col] = cell;
 
@@ -498,7 +509,7 @@ public class ConnectFourApp extends Application {
                                     System.currentTimeMillis()
                             ));
                             myTurn = false;
-                            Platform.runLater(() -> statusField.setText("Opponent…"));
+                            Platform.runLater(() -> statusField.setText("OPPONENT"));
                         } catch (IOException ex) {
                             ex.printStackTrace();
                         }
@@ -509,21 +520,21 @@ public class ConnectFourApp extends Application {
             }
         }
 
-
-
-        HBox inputRow = new HBox(10, statusField);
-        inputRow.setAlignment(Pos.CENTER);
-
         // 3) Chat panel (unchanged)
         TextArea chatArea = new TextArea();
         chatArea.setEditable(false);
         chatArea.setWrapText(true);
         chatArea.setPrefSize(250, 300);
+        chatArea.setStyle("-fx-control-inner-background: #182325; -fx-font-size: 24; -fx-text-fill: #FFF;");
 
         TextField chatInput = new TextField();
-        chatInput.setPromptText("Type message…");
-        Button sendBtn = new Button("Send");
-        sendBtn.setOnAction(ev -> {
+        chatInput.setPromptText("TYPE MESSAGE");
+        chatInput.setPrefWidth(270);
+        chatInput.setStyle("-fx-prompt-text-fill: #FFF; -fx-control-inner-background: #182325; -fx-font-size: 24; -fx-text-fill: #FFF;");
+        Button sendButton = new Button("SEND");
+        sendButton.setPrefWidth(100);
+        sendButton.setStyle("-fx-background-color: #3E926F; -fx-text-fill: #FFF; -fx-font-size: 24;");
+        sendButton.setOnAction(ev -> {
             String txt = chatInput.getText().trim();
             if (!txt.isEmpty()) {
                 try {
@@ -541,11 +552,16 @@ public class ConnectFourApp extends Application {
                 chatInput.clear();
             }
         });
-        HBox chatForm = new HBox(5, chatInput, sendBtn);
+        HBox chatForm = new HBox(15, chatInput, sendButton);
         chatForm.setAlignment(Pos.CENTER);
+        chatForm.setPrefWidth(390);
+        chatForm.setMaxWidth(390);
 
-        Button surrenderBtn = new Button("Surrender");
-        surrenderBtn.setOnAction(ev -> {
+        Button quitButton = new Button("QUIT");
+        quitButton.setPrefWidth(380);
+        quitButton.setMaxWidth(380);
+        quitButton.setStyle("-fx-background-color: #FF6368; -fx-font-size: 24; -fx-text-fill: #FFF;");
+        quitButton.setOnAction(ev -> {
             if (singlePlayerMode) {
                 myTurn = false;
                 showResultPopUp("YOU LOSE!");
@@ -566,20 +582,94 @@ public class ConnectFourApp extends Application {
             }
         });
 
-        VBox chatPane = new VBox(10,
-                new Label("Chat"), chatArea, chatForm, surrenderBtn
+        Label gameMode = new Label(singlePlayerMode ? "SINGLE PLAYER" : "MULTIPLAYER");
+        gameMode.setAlignment(Pos.CENTER);
+        gameMode.setPrefWidth(390);
+        gameMode.setMaxWidth(390);
+        gameMode.setPadding(new Insets(10));
+        gameMode.setStyle("-fx-font-size: 64px;"+
+                " -fx-text-fill: #FFF;"+
+                " -fx-background-color: #0087F1;" +
+                "-fx-border-color: #182325;"+
+                "-fx-border-width: 5;" +
+                "-fx-border-radius: 5;" +
+                "-fx-background-radius: 10;"
         );
-        chatPane.setPadding(new Insets(10));
-        chatPane.setAlignment(Pos.CENTER);
 
-        // 4) Layout everything
-        VBox leftPane = new VBox(15, inputRow, board);
+        Label vsLabel = new Label("P1\n\nVS\n\nP2");
+        vsLabel.setPadding(new Insets(20));
+        vsLabel.setPrefWidth(390);
+        vsLabel.setMaxWidth(390);
+        vsLabel.setAlignment(Pos.CENTER);
+        vsLabel.setTextAlignment(TextAlignment.CENTER);
+        vsLabel.setMaxWidth(Double.MAX_VALUE);
+        vsLabel.setStyle(
+                "-fx-border-radius: 5;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-border-color: #182325;"+
+                        "-fx-border-width: 5;" +
+                        "-fx-background-color: #006cb0;" +
+                        "-fx-text-fill: #FFF;" +
+                        "-fx-font-size: 36"
+        );
+
+        VBox topPane = new VBox(5, gameMode, vsLabel);
+        topPane.setAlignment(Pos.CENTER);
+
+        Label turnLabel = new Label("TURN");
+        turnLabel.setStyle("-fx-text-fill: #FFF; -fx-background-color: #182325; -fx-font-size: 36");
+        turnLabel.setAlignment(Pos.BASELINE_LEFT);
+
+        statusField.setStyle("-fx-font-size: 36; -fx-text-fill: #FFF; -fx-background-color: #2f3a3c; -fx-border-radius: 5; -fx-border-color: #182325;-fx-background-radius: 10; -fx-border-width: 5;");
+        statusField.setAlignment(Pos.CENTER);
+        statusField.setPrefWidth(250);
+        statusField.setMaxWidth(250);
+        statusField.setEditable(false);
+        statusField.setMouseTransparent(true);
+
+
+        HBox whoTurn = new HBox(10, turnLabel, statusField);
+        whoTurn.setAlignment(Pos.CENTER);
+        whoTurn.setPrefWidth(390);
+        whoTurn.setMaxWidth(390);
+        whoTurn.setPrefHeight(40);
+        whoTurn.setMaxHeight(40);
+        whoTurn.setPadding(new Insets(10,0,10,0));
+        whoTurn.setStyle(
+                "-fx-font-size: 36px;"+
+                "-fx-background-color: #182325;" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-radius: 5"
+                );
+
+        VBox chatAreaPane = new VBox(10, chatArea, chatForm);
+
+        VBox chatPane = new VBox(10,topPane, whoTurn, chatAreaPane, quitButton);
+        chatPane.setPadding(new Insets(10));
+        chatPane.setPrefWidth(400);
+        chatPane.setMaxWidth(400);
+        chatPane.setAlignment(Pos.CENTER);
+        chatPane.setStyle(
+                "-fx-background-color: #2f3a3c;" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-radius: 10;" +
+                "-fx-border-color: #a56e00"
+                );
+
+        // 4) Lay everything out
+        VBox leftPane = new VBox(board);
         leftPane.setAlignment(Pos.CENTER);
-        HBox root = new HBox(20, leftPane, chatPane);
+        leftPane.setPrefWidth(1000);
+        leftPane.setMaxWidth(1000);
+        HBox root = new HBox(100, chatPane, leftPane);
         root.setPadding(new Insets(10));
 
-        gameScene = new Scene(root, 1600, 900);
+        StackPane stackPane = new StackPane(root);
+        stackPane.setBackground(new Background(gameWallpaper));
+
+        gameScene = new Scene(stackPane, 1600, 900);
         primaryStage.setScene(gameScene);
+        applyGlobalStyles(primaryStage.getScene());
         primaryStage.show();
 
         // 5) Listener thread: paint moves, chat, end, *and* flip turns
@@ -595,7 +685,7 @@ public class ConnectFourApp extends Application {
                                 new Alert(AlertType.WARNING, msg.getContent()).showAndWait();
                                 // it must still be your turn, so re-enable the drop controls:
                                 myTurn = true;
-                                statusField.setText("Your turn!");
+                                statusField.setText("YOUR");
                             });
                         } else if (t == MessageType.MOVE) {
                             String[] parts = msg.getContent().split(",", 2);
@@ -610,10 +700,10 @@ public class ConnectFourApp extends Application {
                             if (!msg.getSender().equals(currentUser.getUsername())) {
                                 myTurn = true;
                                 Platform.runLater(() -> {
-                                    statusField.setText("Your turn!");
+                                    statusField.setText("YOUR");
                                 });
                             } else {
-                                statusField.setText("Opponent…");
+                                statusField.setText("OPPONENT");
                             }
                         } else if (t == MessageType.CHAT) {
                             Platform.runLater(() ->
@@ -656,7 +746,7 @@ public class ConnectFourApp extends Application {
     }
     // ───── Single-player helper methods ─────
 
-    /** Drops human piece, checks win, then AI move and checks win. */
+    /** Drops a human piece, checks win, then AI move and checks win. */
     private void handleLocalMove(int column, Circle[][] cells) {
         if (gameOver){
             singlePlayerMode=false;
@@ -685,7 +775,7 @@ public class ConnectFourApp extends Application {
         }
 
         myTurn = false;
-        statusField.setText("Opponent…");
+        statusField.setText("OPPONENT");
         if (aiPause != null) aiPause.stop();
 
         // 2) AI move after delay
@@ -710,7 +800,7 @@ public class ConnectFourApp extends Application {
             }
 
             myTurn = true;
-            statusField.setText("Your turn!");
+            statusField.setText("YOUR");
         });
         aiPause.play();
     }

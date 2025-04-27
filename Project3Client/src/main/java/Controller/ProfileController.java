@@ -41,17 +41,6 @@ public class ProfileController {
                         "-fx-background-radius: 5;" +
                         "-fx-cursor: hand;"
         );
-
-//        usernameOnlyLabel.setStyle(
-//                "-fx-background-color: #0087F1;" +
-//                        "-fx-text-fill: white;" +
-//                        "-fx-font-size: 36;" +
-//                        "-fx-border-width: 2;" +
-//                        "-fx-background-radius: 10;" +
-//                        "-fx-border-radius: 10;" +
-//                        "-fx-padding: 10;" +
-//                        "-fx-alignment: center;"
-//        );
         usernameOnlyLabel.setAlignment(Pos.CENTER);
         usernameOnlyLabel.setMaxWidth(300);
         usernameOnlyLabel.setWrapText(true);
@@ -72,6 +61,7 @@ public class ProfileController {
                         "-fx-border-width: 2;" +
                         "-fx-border-radius: 5;" +
                         "-fx-background-radius: 5;" +
+                        "-fx-padding: 10 10 10 10;" +
                         "-fx-cursor: hand;"
         );
         deleteButton.setOnAction(e -> app.showDeleteAccountConfirm());
