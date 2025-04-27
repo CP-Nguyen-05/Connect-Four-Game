@@ -59,4 +59,7 @@ public class UserService {
         if (removed) store.saveUsers(all);
         return removed;
     }
+    public List<User> getLeaderboard() {
+        return store.getLeaderboard();
+    }
 }
