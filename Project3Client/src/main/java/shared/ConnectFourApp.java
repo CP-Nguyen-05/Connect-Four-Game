@@ -842,20 +842,20 @@ public class ConnectFourApp extends Application {
                                     ? Color.web("#0087F1")
                                     : Color.web("#FF6368");
 //                            Platform.runLater(() -> cells[r][c].setFill(fill));
-                            Platform.runLater(() ->
-                                    fillCell(cells[r][c], fill));
+                            Platform.runLater(() ->{
+                                    fillCell(cells[r][c], fill);
                                     resetAllHighlights(cells);
+                                // if it was *their* move, now it's your turn
+                                    if (!msg.getSender().equals(currentUser.getUsername())) {
+                                        myTurn = true;
+                                        Platform.runLater(() -> {
+                                            statusField.setText("YOUR");
+                                        });
+                                    } else {
+                                        statusField.setText("OPPONENT");
+                                    }
+                            });
 
-
-                            // if it was *their* move, now it's your turn
-                            if (!msg.getSender().equals(currentUser.getUsername())) {
-                                myTurn = true;
-                                Platform.runLater(() -> {
-                                    statusField.setText("YOUR");
-                                });
-                            } else {
-                                statusField.setText("OPPONENT");
-                            }
                         } else if (t == MessageType.CHAT) {
                             Platform.runLater(() ->
                                     chatArea.appendText(msg.getSender() + ": " + msg.getContent() + "\n")
@@ -1037,7 +1037,7 @@ public class ConnectFourApp extends Application {
             seconds = 15;
         }
         else if (outcomeText.equals("DRAW!")) {
-            seconds = 30;
+            seconds = 60;
         }
         // Create the two action buttons
         Button rematchButton = new Button("REMATCH");
