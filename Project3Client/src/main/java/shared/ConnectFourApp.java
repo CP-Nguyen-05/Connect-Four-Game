@@ -289,35 +289,6 @@ public class ConnectFourApp extends Application {
         leaderboardList.setAlignment(Pos.TOP_CENTER);
         leaderboardList.setPadding(new Insets(30));
 
-//        // Example Players
-//        String[][] players = {
-//                { "James", "4200"},
-//                { "Alice", "4100"},
-//                {"Bob", "4000"}
-//        };
-//        int rank = 1;
-//        for (String[] p : players) {
-//            Label rank = new Label(String.valueOf(rank));
-//            rank.setStyle("-fx-text-fill: #F98C02; -fx-font-size: 36px; -fx-font-weight: bold;");
-//            rank.setPrefWidth(80);                   // ← width for number
-//            rank.setAlignment(Pos.CENTER_LEFT);       // ← align left
-//
-//            Label username = new Label(p[1]);
-//            username.setStyle("-fx-text-fill: white; -fx-font-size: 36px;");
-//            username.setPrefWidth(500);                // ← width for name
-//            username.setAlignment(Pos.CENTER);         // ← center align
-//
-//            Label score = new Label(p[2] + " pts");
-//            score.setStyle("-fx-text-fill: #0087F1; -fx-font-size: 36px;");
-//            score.setPrefWidth(200);                    // ← width for score
-//            score.setAlignment(Pos.CENTER_RIGHT);       // ← right align
-//
-//            HBox row = new HBox(rank, username, score);
-//            row.setAlignment(Pos.CENTER);
-//            leaderboardList.getChildren().add(row);
-//            rank+=1;
-//        }
-
 
         VBox leaderboardCard = new VBox(leaderboardList);
         leaderboardCard.setAlignment(Pos.TOP_CENTER);
