@@ -162,24 +162,6 @@ public class ConnectionHandler implements Runnable {
             while (true) {
                 Message msg = readMessage();
                 switch (msg.getType()) {
-                    case CHAT:
-                        if (currentRoomId != null) {
-                            GameSession gs = server.getGameSession(currentRoomId);
-                            if (gs != null) {
-                                gs.handleMessage(msg);
-                                break;
-                            }
-                        }
-                        break;
-                    case MOVE:
-                        if (currentRoomId != null) {
-                            GameSession gs = server.getGameSession(currentRoomId);
-                            if (gs != null) {
-                                gs.handleMessage(msg);
-                                break;
-                            }
-                        }
-                        break;
                     case SURRENDER:
                         System.out.println(msg.getSender()+" surrendered in "+ currentRoomId);
                         if (currentRoomId != null) {
@@ -190,15 +172,9 @@ public class ConnectionHandler implements Runnable {
                             }
                         }
                         break;
+                    case CHAT:
+                    case MOVE:
                     case REMATCH_REQUEST:
-                        if (currentRoomId != null) {
-                            GameSession gs = server.getGameSession(currentRoomId);
-                            if (gs != null) {
-                                gs.handleMessage(msg);
-                                break;
-                            }
-                        }
-                        break;
                     case REMATCH_REJECT:
                         if (currentRoomId != null) {
                             GameSession gs = server.getGameSession(currentRoomId);
