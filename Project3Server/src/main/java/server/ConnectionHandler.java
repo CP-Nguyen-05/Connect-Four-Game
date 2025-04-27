@@ -333,8 +333,6 @@ public class ConnectionHandler implements Runnable {
                                         ));
                                     }
                                     System.out.println(roomId + " started game");
-                                    // hand off to your GameSession runner
-                                   // new Thread(new GameSession(ch1, ch2), "GameSession-" + roomId).start();
                                     GameSession session = new GameSession(ch1, ch2,server, roomId);
                                     server.addGameSession(roomId, session);
                                     new Thread(session, "GameSession-" + roomId).start();

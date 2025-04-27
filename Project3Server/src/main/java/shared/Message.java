@@ -22,15 +22,4 @@ public class Message implements Serializable {
     public String      getContent()   { return content; }
     public String      getSender()    { return sender; }
     public String      getRecipient() { return recipient; }
-
-    @Override
-    public String toString() {
-        if ("SERVER".equals(sender)) {
-            return content;
-        }
-        if (recipient != null && !recipient.isEmpty()) {
-            return "[PRIVATE] " + sender + " → " + recipient + ": " + content;
-        }
-        return sender + ": " + content;
-    }
 }
