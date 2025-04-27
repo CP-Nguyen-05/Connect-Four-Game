@@ -7,7 +7,6 @@ import Controller.RoomController;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -290,35 +289,6 @@ public class ConnectFourApp extends Application {
         leaderboardList.setAlignment(Pos.TOP_CENTER);
         leaderboardList.setPadding(new Insets(30));
 
-//        // Example Players
-//        String[][] players = {
-//                { "James", "4200"},
-//                { "Alice", "4100"},
-//                {"Bob", "4000"}
-//        };
-//        int rank = 1;
-//        for (String[] p : players) {
-//            Label rank = new Label(String.valueOf(rank));
-//            rank.setStyle("-fx-text-fill: #F98C02; -fx-font-size: 36px; -fx-font-weight: bold;");
-//            rank.setPrefWidth(80);                   // ← width for number
-//            rank.setAlignment(Pos.CENTER_LEFT);       // ← align left
-//
-//            Label username = new Label(p[1]);
-//            username.setStyle("-fx-text-fill: white; -fx-font-size: 36px;");
-//            username.setPrefWidth(500);                // ← width for name
-//            username.setAlignment(Pos.CENTER);         // ← center align
-//
-//            Label score = new Label(p[2] + " pts");
-//            score.setStyle("-fx-text-fill: #0087F1; -fx-font-size: 36px;");
-//            score.setPrefWidth(200);                    // ← width for score
-//            score.setAlignment(Pos.CENTER_RIGHT);       // ← right align
-//
-//            HBox row = new HBox(rank, username, score);
-//            row.setAlignment(Pos.CENTER);
-//            leaderboardList.getChildren().add(row);
-//            rank+=1;
-//        }
-
 
         VBox leaderboardCard = new VBox(leaderboardList);
         leaderboardCard.setAlignment(Pos.TOP_CENTER);
@@ -352,12 +322,10 @@ public class ConnectFourApp extends Application {
             try {
                 // send the request
                 conn.sendMessage(new Message(
-                        UUID.randomUUID().toString(),
                         MessageType.LIST_LEADERBOARD,
                         "",
                         currentUser.getUsername(),
-                        null,
-                        System.currentTimeMillis()
+                        null
                 ));
 
                 // wait for the reply
@@ -537,15 +505,6 @@ public class ConnectFourApp extends Application {
             Platform.runLater(() -> primaryStage.getScene().getRoot().requestFocus());
         }
         else {
-//            roomCtrl = new RoomController(
-//                    conn,
-//                    currentUser,
-//                    this,
-//                    availableRooms,
-//                    roomListArea,
-//                    roomIdField,
-//                    messageLabel
-//            );
             // ** re‑enable and clear them any time you come back **
             roomListArea.setDisable(false);
             roomIdField.setDisable(false);
@@ -725,14 +684,11 @@ public class ConnectFourApp extends Application {
                         // multiplayer: send to server
                         try {
                             conn.sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.MOVE,
                                     String.valueOf(column),
                                     currentUser.getUsername(),
-                                    null,
-                                    System.currentTimeMillis()
+                                    null
                             ));
-//                            resetAllHighlights(cells);
                             myTurn = false;
                             Platform.runLater(() -> statusField.setText("OPPONENT"));
                         } catch (IOException ex) {
@@ -764,12 +720,10 @@ public class ConnectFourApp extends Application {
             if (!txt.isEmpty()) {
                 try {
                     conn.sendMessage(new Message(
-                            UUID.randomUUID().toString(),
                             MessageType.CHAT,
                             txt,
                             currentUser.getUsername(),
-                            null,
-                            System.currentTimeMillis()
+                            null
                     ));
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -794,12 +748,10 @@ public class ConnectFourApp extends Application {
                 // LAN mode: tell the server
                 try {
                     conn.sendMessage(new Message(
-                            UUID.randomUUID().toString(),
                             MessageType.SURRENDER,
                             currentRoomId,
                             currentUser.getUsername(),
-                            null,
-                            System.currentTimeMillis()
+                            null
                     ));
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -928,7 +880,6 @@ public class ConnectFourApp extends Application {
                             Color fill = msg.getSender().equals(currentUser.getUsername())
                                     ? Color.web("#0087F1")
                                     : Color.web("#FF6368");
-//                            Platform.runLater(() -> cells[r][c].setFill(fill));
                             Platform.runLater(() ->{
                                     fillCell(cells[r][c], fill);
                                     resetAllHighlights(cells);
@@ -1210,12 +1161,10 @@ public class ConnectFourApp extends Application {
             Timeline autoReject = new Timeline(new KeyFrame(Duration.seconds(seconds), e -> {
                 try {
                     conn.sendMessage(new Message(
-                            UUID.randomUUID().toString(),
                             MessageType.REMATCH_REJECT,
                             currentRoomId,
                             currentUser.getUsername(),
-                            null,
-                            System.currentTimeMillis()
+                            null
                     ));
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -1229,12 +1178,10 @@ public class ConnectFourApp extends Application {
                 autoReject.stop();
                 try {
                     conn.sendMessage(new Message(
-                            UUID.randomUUID().toString(),
                             MessageType.REMATCH_REQUEST,
                             currentRoomId,
                             currentUser.getUsername(),
-                            null,
-                            System.currentTimeMillis()
+                            null
                     ));
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -1255,12 +1202,10 @@ public class ConnectFourApp extends Application {
                 autoReject.stop();
                 try {
                     conn.sendMessage(new Message(
-                            UUID.randomUUID().toString(),
                             MessageType.REMATCH_REJECT,
                             currentRoomId,
                             currentUser.getUsername(),
-                            null,
-                            System.currentTimeMillis()
+                            null
                     ));
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -1442,12 +1387,10 @@ public class ConnectFourApp extends Application {
     private void run() {
         try {
             Message del = new Message(
-                    UUID.randomUUID().toString(),
                     MessageType.DELETE_ACCOUNT,
                     currentUser.getPassword(),
                     currentUser.getUsername(),
-                    null,
-                    System.currentTimeMillis()
+                    null
             );
             System.out.println("Sending DELETE_ACCOUNT message for user: " + currentUser.getUsername());
             conn.sendMessage(del);

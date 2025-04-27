@@ -76,12 +76,10 @@ public class GuiClient extends Application {
 
 			// Send LOGIN message
 			Message login = new Message(
-					UUID.randomUUID().toString(),
 					MessageType.LOGIN,
 					"",
 					uname,
-					null,
-					System.currentTimeMillis()
+					null
 			);
 			conn.sendMessage(login);
 		} catch (IOException ex) {
@@ -128,21 +126,17 @@ public class GuiClient extends Application {
 			String recipient = parts[0].substring(1);
 			String content   = parts[1];
 			msg = new Message(
-					UUID.randomUUID().toString(),
 					MessageType.CHAT,
 					content,
 					uname,
-					recipient,
-					System.currentTimeMillis()
+					recipient
 			);
 		} else {
 			msg = new Message(
-					UUID.randomUUID().toString(),
 					MessageType.CHAT,
 					text,
 					uname,
-					null,
-					System.currentTimeMillis()
+					null
 			);
 		}
 

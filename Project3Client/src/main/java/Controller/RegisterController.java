@@ -113,12 +113,10 @@ public class RegisterController {
         try {
             ClientConnection conn = app.getOrCreateConnection();
             Message m = new Message(
-                    UUID.randomUUID().toString(),
                     MessageType.REGISTER,
                     password,
                     userName,
-                    null,
-                    System.currentTimeMillis()
+                    null
             );
             conn.sendMessage(m);
 

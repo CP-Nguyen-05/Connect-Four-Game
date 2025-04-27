@@ -81,21 +81,17 @@ public class ConnectionHandler implements Runnable {
                         boolean created = userService.registerUser(newUser);
                         if (created) {
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.REGISTER_SUCCESS,
                                     "Registration successful – you may now log in.",
                                     "SERVER",
-                                    msg.getSender(),
-                                    System.currentTimeMillis()
+                                    msg.getSender()
                             ));
                         } else {
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.ERROR,
                                     "Username already exists.",
                                     "SERVER",
-                                    msg.getSender(),
-                                    System.currentTimeMillis()
+                                    msg.getSender()
                             ));
                         }
                         break;
@@ -106,21 +102,17 @@ public class ConnectionHandler implements Runnable {
 
                         if (!userService.usernameExists(uname)) {
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.ERROR,
                                     "Account \"" + uname + "\" does not exist. Please register.",
                                     "SERVER",
-                                    uname,
-                                    System.currentTimeMillis()
+                                    uname
                             ));
                         } else if (userService.validateCredentials(uname, pwd) == null) {
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.ERROR,
                                     "Password is incorrect.",
                                     "SERVER",
-                                    uname,
-                                    System.currentTimeMillis()
+                                    uname
                             ));
                         } else {
                             // 1) Mark this handler as logged‐in
@@ -142,12 +134,10 @@ public class ConnectionHandler implements Runnable {
 
                             // 4) Send it back as LOGIN_SUCCESS
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.LOGIN_SUCCESS,
                                     payload,
                                     "SERVER",
-                                    uname,
-                                    System.currentTimeMillis()
+                                    uname
                             ));
 
 
@@ -156,12 +146,10 @@ public class ConnectionHandler implements Runnable {
 
                     default:
                         sendMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.ERROR,
                                 "Please REGISTER or LOGIN first.",
                                 "SERVER",
-                                msg.getSender(),
-                                System.currentTimeMillis()
+                                msg.getSender()
                         ));
                 }
                 if (username != null) {
@@ -220,12 +208,10 @@ public class ConnectionHandler implements Runnable {
                             }
                         }
                         sendMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.ERROR,
                                 "No active game to rematch/reject.",
                                 "SERVER",
-                                username,
-                                System.currentTimeMillis()
+                                username
                         ));
                         break;
                     case DELETE_ACCOUNT:
@@ -238,23 +224,19 @@ public class ConnectionHandler implements Runnable {
                             System.err.println("Error deleting user " + user + ": " + ex.getMessage());
                             ex.printStackTrace();
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.ERROR,
                                     "Server error: unable to delete account.",
                                     "SERVER",
-                                    user,
-                                    System.currentTimeMillis()
+                                    user
                             ));
                             break;
                         }
                         if (ok) {
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.DELETE_ACCOUNT_SUCCESS,
                                     "Account deleted successfully.",
                                     "SERVER",
-                                    user,
-                                    System.currentTimeMillis()
+                                    user
                             ));
                             // Log the deletion
                             System.out.println(user + " has deleted their account.");
@@ -266,12 +248,10 @@ public class ConnectionHandler implements Runnable {
                             throw new SocketException("Connection closed after DELETE_ACCOUNT");
                         } else {
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.ERROR,
                                     "Password incorrect; cannot delete account.",
                                     "SERVER",
-                                    user,
-                                    System.currentTimeMillis()
+                                    user
                             ));
                         }
                         return;
@@ -290,12 +270,10 @@ public class ConnectionHandler implements Runnable {
 
                         String payload = userCount + ";" + roomsPart;
                         sendMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.ROOM_LIST,
                                 payload,
                                 "SERVER",
-                                msg.getSender(),
-                                System.currentTimeMillis()
+                                msg.getSender()
                         ));
                         break;
                     case LIST_LEADERBOARD:
@@ -306,12 +284,10 @@ public class ConnectionHandler implements Runnable {
                                 .map(u -> u.getUsername() + "|" + u.getScore())
                                 .collect(Collectors.joining(";"));
                         sendMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.LEADERBOARD,
                                 payload,
                                 "SERVER",
-                                msg.getSender(),
-                                System.currentTimeMillis()
+                                msg.getSender()
                         ));
                         break;
                     case JOIN_ROOM:
@@ -319,23 +295,19 @@ public class ConnectionHandler implements Runnable {
                         Optional<Room> opt = server.getRoomManager().findRoomById(roomId);
                         if (opt.isEmpty()) {
                             sendMessage(new Message(
-                                    UUID.randomUUID().toString(),
                                     MessageType.ERROR,
                                     "Room not found: " + roomId,
                                     "SERVER",
-                                    username,
-                                    System.currentTimeMillis()
+                                    username
                             ));
                         } else {
                             Room room = opt.get();
                             if (!room.isOpenForPlayers()) {
                                 sendMessage(new Message(
-                                        UUID.randomUUID().toString(),
                                         MessageType.ERROR,
                                         "Room is full: " + roomId,
                                         "SERVER",
-                                        username,
-                                        System.currentTimeMillis()
+                                        username
                                 ));
                             } else {
                                 // 1) join
@@ -354,17 +326,13 @@ public class ConnectionHandler implements Runnable {
                                     // tell both to switch to game UI
                                     for (ConnectionHandler ch : List.of(ch1, ch2)) {
                                         ch.sendMessage(new Message(
-                                                UUID.randomUUID().toString(),
                                                 MessageType.GAME_START,
                                                 payload,
                                                 "SERVER",
-                                                ch.getUsername(),
-                                                System.currentTimeMillis()
+                                                ch.getUsername()
                                         ));
                                     }
                                     System.out.println(roomId + " started game");
-                                    // hand off to your GameSession runner
-                                   // new Thread(new GameSession(ch1, ch2), "GameSession-" + roomId).start();
                                     GameSession session = new GameSession(ch1, ch2,server, roomId);
                                     server.addGameSession(roomId, session);
                                     new Thread(session, "GameSession-" + roomId).start();
@@ -379,12 +347,10 @@ public class ConnectionHandler implements Runnable {
                         System.out.println(username + " created " + newRoom.getRoomId());
                         this.currentRoomId = newRoom.getRoomId();
                         sendMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.ROOM_CREATED,
                                 currentRoomId,
                                 "SERVER",
-                                username,
-                                System.currentTimeMillis()
+                                username
                         ));
                         break;
                     case CANCEL_ROOM:
@@ -395,23 +361,19 @@ public class ConnectionHandler implements Runnable {
                             System.out.println(username + " has been cancelled "+rid);
                         });
                         sendMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.ROOM_CANCELLED,
                                 rid,
                                 "SERVER",
-                                username,
-                                System.currentTimeMillis()
+                                username
                         ));
                         break;
 
                     default:
                         sendMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.ERROR,
                                 "Invalid message type: " + msg.getType(),
                                 "SERVER",
-                                msg.getSender(),
-                                System.currentTimeMillis()
+                                msg.getSender()
                         ));
                 }
             }
@@ -427,12 +389,10 @@ public class ConnectionHandler implements Runnable {
                     if (gs != null) {
                         // notify opponent of win
                         gs.handleMessage(new Message(
-                                UUID.randomUUID().toString(),
                                 MessageType.SURRENDER,
                                 currentRoomId,
                                 username,
-                                null,
-                                System.currentTimeMillis()
+                                null
                         ));
                     }
                 }
@@ -476,14 +436,27 @@ public class ConnectionHandler implements Runnable {
                     server.addGameSession(roomId, gs);
                     new Thread(gs, "GameSession-"+roomId).start();
                     // notify both clients
-                    ch1.sendMessage(new Message(UUID.randomUUID().toString(), MessageType.GAME_START, roomId, "SERVER", ch1.getUsername(), System.currentTimeMillis()));
-                    ch2.sendMessage(new Message(UUID.randomUUID().toString(), MessageType.GAME_START, roomId, "SERVER", ch2.getUsername(), System.currentTimeMillis()));
+                    ch1.sendMessage(new Message(MessageType.GAME_START,
+                            roomId,
+                            "SERVER",
+                            ch1.getUsername()
+                    ));
+                    ch2.sendMessage(new Message(MessageType.GAME_START,
+                            roomId,
+                            "SERVER",
+                            ch2.getUsername()
+                    ));
                 }
             }
         }
     }
 
     private Message errorResponse(String text) {
-        return new Message(UUID.randomUUID().toString(), MessageType.ERROR, text, "SERVER", username, System.currentTimeMillis());
+        return new Message(
+                MessageType.ERROR,
+                text,
+                "SERVER",
+                username
+        );
     }
 }

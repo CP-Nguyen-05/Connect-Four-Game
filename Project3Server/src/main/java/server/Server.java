@@ -1,4 +1,5 @@
 package server;
+
 import shared.Message;
 import shared.MessageType;
 import shared.User;
@@ -10,84 +11,79 @@ import java.net.Socket;
 import java.util.Set;
 import java.util.Map;
 import java.util.Collections;
-
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Top‐level server: accepts connections and keeps track of all handlers.
- */
 public class Server {
-	private static final int PORT = 12345;
-	private final Set<ConnectionHandler> clients = ConcurrentHashMap.newKeySet();
-	private final Map<String,GameSession> games = new ConcurrentHashMap<>();
+	private static final int SERVER_PORT = 12345;
+	private Set<ConnectionHandler> connectedClients = ConcurrentHashMap.newKeySet();
+	private Map<String, GameSession> activeGames = new ConcurrentHashMap<>();
+	private RoomManager myRoomManager = new RoomManager();
 
-	public void addGameSession(String roomId, GameSession gs) {
-		games.put(roomId, gs);
-		new Thread(gs, "GameSession-" + roomId).start();
+	// Add a new game session
+	public void addGameSession(String roomId, GameSession gameSession) {
+		activeGames.put(roomId, gameSession);
+		new Thread(gameSession, "GameSession-" + roomId).start();
 	}
 
 	public GameSession getGameSession(String roomId) {
-		return games.get(roomId);
+		return activeGames.get(roomId);
 	}
 
 	public void removeGameSession(String roomId) {
-		games.remove(roomId);
+		activeGames.remove(roomId);
 	}
 
-	private final RoomManager roomManager = new RoomManager();
-
+	// Start the server
 	public static void main(String[] args) throws IOException {
 		new Server().start();
 	}
 
 	public void start() throws IOException {
-		System.out.println("Server starting on port " + PORT + "...");
-		try (ServerSocket ss = new ServerSocket(PORT)) {
+		System.out.println("Starting server on port " + SERVER_PORT);
+		try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)) {
 			while (true) {
-				Socket sock = ss.accept();
-				ConnectionHandler handler = new ConnectionHandler(sock, this);
-				clients.add(handler);
-				new Thread(handler).start();
+				Socket clientSocket = serverSocket.accept();
+				ConnectionHandler clientHandler = new ConnectionHandler(clientSocket, this);
+				connectedClients.add(clientHandler);
+				new Thread(clientHandler).start();
 			}
 		}
 	}
 
 	public RoomManager getRoomManager() {
-		return roomManager;
+		return myRoomManager;
 	}
 
-	/** Broadcast to everyone _except_ the origin handler. */
-	public void broadcastExcept(Message msg, ConnectionHandler exclude) {
-		for (ConnectionHandler ch : clients) {
-			if (ch != exclude) {
-				ch.sendMessage(msg);
+	// Send message to all clients except one
+	public void broadcastExcept(Message message, ConnectionHandler excludeClient) {
+		for (ConnectionHandler client : connectedClients) {
+			if (client != excludeClient) {
+				client.sendMessage(message);
 			}
 		}
 	}
 
-	/** Broadcast to absolutely everyone. */
-	public void broadcast(Message msg) {
-		broadcastExcept(msg, null);
+	// Send message to all clients
+	public void broadcast(Message message) {
+		broadcastExcept(message, null);
 	}
 
-	/**
-	 * Remove a handler when its client disconnects.
-	 */
-	public void removeClient(ConnectionHandler ch) {
-		clients.remove(ch);
+	// Remove a disconnected client
+	public void removeClient(ConnectionHandler clientHandler) {
+		connectedClients.remove(clientHandler);
 	}
 
-	/**
-	 * Find a handler by username (or return null if not connected).
-	 */
+	// Find client by username
 	public ConnectionHandler findByUsername(String username) {
-		return clients.stream()
-				.filter(ch -> ch.getUsername().equals(username))
-				.findFirst()
-				.orElse(null);
+		for (ConnectionHandler client : connectedClients) {
+			if (client.getUsername().equals(username)) {
+				return client;
+			}
+		}
+		return null;
 	}
 
 	public Set<ConnectionHandler> getClients() {
-		return Collections.unmodifiableSet(clients);
+		return Collections.unmodifiableSet(connectedClients);
 	}
 }

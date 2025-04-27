@@ -5,43 +5,31 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-/**
- * Low‑level socket wrapper for sending/receiving Message objects.
- */
 public class ClientConnection {
-    private Socket socket;
-    private ObjectOutputStream out;
-    private ObjectInputStream  in;
+    private Socket mySocket;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
 
-    /**
-     * Open a connection to the given host/port.
-     */
+    // Connect to the server
     public void connect(String host, int port) throws IOException {
-        socket = new Socket(host, port);
-        // Important: create ObjectOutputStream before ObjectInputStream
-        out = new ObjectOutputStream(socket.getOutputStream());
-        in  = new ObjectInputStream(socket.getInputStream());
+        mySocket = new Socket(host, port);
+        outputStream = new ObjectOutputStream(mySocket.getOutputStream());
+        inputStream = new ObjectInputStream(mySocket.getInputStream());
     }
 
-    /**
-     * Send a Message object to the server.
-     */
-    public void sendMessage(Message msg) throws IOException {
-        out.writeObject(msg);
-        out.flush();
+    // Send a message to the server
+    public void sendMessage(Message message) throws IOException {
+        outputStream.writeObject(message);
+        outputStream.flush();
     }
 
-    /**
-     * Blocking receive of the next Message from the server.
-     */
+    // Receive a message from the server
     public Message receiveMessage() throws IOException, ClassNotFoundException {
-        return (Message) in.readObject();
+        return (Message) inputStream.readObject();
     }
 
-    /**
-     * Close the underlying socket.
-     */
+    // Close the connection
     public void close() throws IOException {
-        socket.close();
+        mySocket.close();
     }
 }
