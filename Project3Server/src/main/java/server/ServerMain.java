@@ -1,11 +1,9 @@
 package server;
-import shared.Message;
-import shared.MessageType;
-import shared.User;
-import shared.Room;
-import shared.RoomManager;
+import shared.UdpDiscoveryServer;
 public class ServerMain {
     public static void main(String[] args) throws Exception {
+        int tcpPort = 12345;
+        new Thread(new UdpDiscoveryServer(tcpPort)).start();
         Server.main(args);
     }
 }

@@ -11,6 +11,9 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import shared.UdpDiscoveryServer;
+import shared.Utils;
+
 import java.io.OutputStream;
 import java.io.PrintStream;
 
@@ -37,6 +40,11 @@ public class GuiServer extends Application {
 		}, true);
 		System.setOut(ps);
 		System.setErr(ps);
+
+		int tcpPort = 12345;  // must match Server.SERVER_PORT
+		System.out.println("[GuiServer] Starting discovery on UDP " + Utils.DISCOVERY_PORT
+				+ " → will reply with TCP port " + tcpPort);
+		new Thread(new UdpDiscoveryServer(tcpPort)).start();
 
 		// Kick off the server in a daemon thread
 		Thread serverThread = new Thread(() -> {
