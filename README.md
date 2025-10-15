@@ -112,7 +112,7 @@ Project3Server/
 │
 └─ pom.xml
 ```
-🧠 Key Components
+## 🧠 Key Components
 | Component                       | Description                                                       |
 | ------------------------------- | ----------------------------------------------------------------- |
 | **ServerMain / GuiServer**      | Initializes the server and shows live status (connections, rooms) |
@@ -124,8 +124,15 @@ Project3Server/
 | **ClientConnection.java**       | Sends and receives messages to/from the server                    |
 | **Controllers**                 | Manage JavaFX UI interactions (login, profile, room, etc.)        |
 
-🖼 Demo Screenshots
-| Login Screen            | Home Screen             | Rooms                   | Waiting Room            | Game Screen             |
-| ----------------------- | ----------------------- | ----------------------- | ----------------------- | ----------------------- |
-| <img width="1199" height="674" alt="login" src="https://github.com/user-attachments/assets/dde11944-c8e0-4d97-af84-8668b30b686c" />| *(Add screenshot here)* | *(Add screenshot here)* | *(Add screenshot here)* | *(Add screenshot here)* |
+## 🖼 Demo Screenshots
+| Login Screen            | Home Screen             | Rooms                   |
+| ----------------------- | ----------------------- | ----------------------- |
+|<img width="1199" height="674" alt="login" src="https://github.com/user-attachments/assets/dde11944-c8e0-4d97-af84-8668b30b686c" />|<img width="1196" height="672" alt="homeScreen" src="https://github.com/user-attachments/assets/11b6d11d-cdf5-4477-b331-1d3302eca378" />|<img width="1196" height="668" alt="rooms" src="https://github.com/user-attachments/assets/d3819617-4879-49f1-bcf8-ae9d22f8590c" />|
 
+| Waiting Room            | Game Screen             | Profile                 |
+| ----------------------- | ----------------------- | ----------------------- |
+|<img width="1199" height="674" alt="WaitingRoom" src="https://github.com/user-attachments/assets/45598e5e-4ea4-44c9-8121-bb3f01c94a59" />|<img width="1199" height="674" alt="GameScreen" src="https://github.com/user-attachments/assets/46fb13ca-bc2b-4935-890f-f4154a9e66a3" />|<img width="1199" height="674" alt="Profile" src="https://github.com/user-attachments/assets/1a01c411-6360-42e3-9e8c-8847da91fb84" />|
+
+| vsComputer              | Leaderboard             | How To Play             |
+| ----------------------- | ----------------------- | ----------------------- |
+|<img width="1199" height="674" alt="vsComputer" src="https://github.com/user-attachments/assets/c9c7b819-eec0-485c-bfb9-fad9d03b067f" />|<img width="1199" height="674" alt="Leaderboard" src="https://github.com/user-attachments/assets/e271b592-8e81-42de-a67a-80307da96653" />|<img width="1199" height="674" alt="HowToPLay" src="https://github.com/user-attachments/assets/c1b63992-36de-443a-b27b-160ce283bf83" />|
